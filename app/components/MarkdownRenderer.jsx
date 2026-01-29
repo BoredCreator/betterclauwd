@@ -18,29 +18,41 @@ export default function MarkdownRenderer({ content }) {
 }
 
 function parseMarkdown(text) {
-  let html = escapeHtml(text)
+  // Normalize line endings
+  let normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
 
-  // Code blocks (must be first to prevent other parsing inside)
-  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
+  // Extract code blocks first to protect them from other parsing
+  const codeBlocks = []
+  normalized = normalized.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
+    const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`
     const highlighted = highlightCode(code.trim(), lang)
-    return `<pre><code class="language-${lang || 'text'}">${highlighted}</code></pre>`
+    codeBlocks.push(`<pre><code class="language-${lang || 'text'}">${highlighted}</code></pre>`)
+    return placeholder
   })
 
-  // Inline code
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>')
+  // Extract inline code
+  const inlineCodes = []
+  normalized = normalized.replace(/`([^`]+)`/g, (match, code) => {
+    const placeholder = `__INLINE_CODE_${inlineCodes.length}__`
+    inlineCodes.push(`<code>${escapeHtml(code)}</code>`)
+    return placeholder
+  })
+
+  // Now escape HTML in the remaining text
+  let html = escapeHtml(normalized)
 
   // Headers
   html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>')
   html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>')
   html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>')
 
-  // Bold and italic
+  // Bold and italic (order matters)
   html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>')
+  html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>')
   html = html.replace(/___(.+?)___/g, '<strong><em>$1</em></strong>')
   html = html.replace(/__(.+?)__/g, '<strong>$1</strong>')
-  html = html.replace(/_(.+?)_/g, '<em>$1</em>')
+  html = html.replace(/(?<!_)_([^_]+)_(?!_)/g, '<em>$1</em>')
 
   // Strikethrough
   html = html.replace(/~~(.+?)~~/g, '<del>$1</del>')
@@ -57,7 +69,7 @@ function parseMarkdown(text) {
 
   // Unordered lists
   html = html.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>')
-  html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+  html = html.replace(/(<li>.*<\/li>\n?)+/gs, (match) => `<ul>${match}</ul>`)
 
   // Ordered lists
   html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
@@ -65,16 +77,30 @@ function parseMarkdown(text) {
   // Tables
   html = parseTable(html)
 
-  // Paragraphs (wrap loose text)
-  html = html.replace(/^(?!<[a-z])(.*[^\s].*)$/gm, (match) => {
-    // Don't wrap if it's already an HTML element or empty
-    if (match.startsWith('<') || match.trim() === '') return match
-    return `<p>${match}</p>`
+  // Line breaks - convert double newlines to paragraph breaks
+  html = html.replace(/\n\n+/g, '</p><p>')
+
+  // Single newlines to <br> within paragraphs (but not after block elements)
+  html = html.replace(/(?<!>)\n(?!<)/g, '<br>\n')
+
+  // Wrap in paragraph if not starting with block element
+  if (!html.match(/^<(h[1-6]|ul|ol|pre|blockquote|table|hr|p)/)) {
+    html = `<p>${html}</p>`
+  }
+
+  // Clean up empty paragraphs
+  html = html.replace(/<p>\s*<\/p>/g, '')
+  html = html.replace(/<p><\/p>/g, '')
+
+  // Restore code blocks
+  codeBlocks.forEach((block, i) => {
+    html = html.replace(`__CODE_BLOCK_${i}__`, block)
   })
 
-  // Clean up empty paragraphs and extra whitespace
-  html = html.replace(/<p>\s*<\/p>/g, '')
-  html = html.replace(/\n{3,}/g, '\n\n')
+  // Restore inline code
+  inlineCodes.forEach((code, i) => {
+    html = html.replace(`__INLINE_CODE_${i}__`, code)
+  })
 
   return html
 }
@@ -91,17 +117,17 @@ function escapeHtml(text) {
 }
 
 function highlightCode(code, lang) {
-  // Basic syntax highlighting
-  let highlighted = code
+  // First escape HTML in the code
+  let highlighted = escapeHtml(code)
 
-  // Comments (single line)
+  // Comments (single line) - must match the escaped versions
   highlighted = highlighted.replace(/(\/\/.*$|#.*$)/gm, '<span class="code-comment">$1</span>')
 
   // Multi-line comments
   highlighted = highlighted.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="code-comment">$1</span>')
 
-  // Strings
-  highlighted = highlighted.replace(/(&quot;[^&]*&quot;|&#039;[^&]*&#039;)/g, '<span class="code-string">$1</span>')
+  // Strings (double and single quotes - escaped versions)
+  highlighted = highlighted.replace(/(&quot;[^&]*?&quot;|&#039;[^&]*?&#039;)/g, '<span class="code-string">$1</span>')
 
   // Keywords (common across languages)
   const keywords = [
@@ -126,7 +152,6 @@ function highlightCode(code, lang) {
 }
 
 function parseTable(html) {
-  // Simple table parsing
   const lines = html.split('\n')
   let inTable = false
   let tableHtml = ''
@@ -152,7 +177,6 @@ function parseTable(html) {
         tableHtml += '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>'
       }
     } else if (isSeparator) {
-      // Skip separator row
       continue
     } else {
       if (inTable) {

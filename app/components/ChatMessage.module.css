@@ -111,3 +111,65 @@
   border-color: var(--accent);
   color: var(--text);
 }
+
+/* Edit mode styles */
+.editContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.editTextarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 0.5rem;
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.editTextarea:focus {
+  outline: none;
+  border-color: var(--text);
+}
+
+.editActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.saveButton,
+.cancelButton {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.saveButton {
+  background: var(--text);
+  border: none;
+  color: var(--bg);
+}
+
+.saveButton:hover {
+  opacity: 0.9;
+}
+
+.cancelButton {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.cancelButton:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}

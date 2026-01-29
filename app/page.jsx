@@ -260,6 +260,36 @@ export default function Home() {
     }
   }, [messages, handleSend])
 
+  // Edit message
+  const handleEditMessage = useCallback((messageId, newContent) => {
+    const messageIndex = messages.findIndex(m => m.id === messageId)
+    if (messageIndex === -1) return
+
+    const editedMessage = messages[messageIndex]
+
+    // Update the message content
+    const updatedMessages = messages.map((m, idx) => {
+      if (idx === messageIndex) {
+        return { ...m, content: newContent }
+      }
+      return m
+    })
+
+    // If it's a user message, remove all messages after it and regenerate
+    if (editedMessage.role === 'user') {
+      const messagesUpToEdit = updatedMessages.slice(0, messageIndex + 1)
+      setMessages(messagesUpToEdit)
+      saveCurrentChat(messagesUpToEdit)
+
+      // Regenerate response
+      handleSend(newContent, editedMessage.images)
+    } else {
+      // For assistant messages, just update the content
+      setMessages(updatedMessages)
+      saveCurrentChat(updatedMessages)
+    }
+  }, [messages, saveCurrentChat, handleSend])
+
   // Check if current model supports images
   const supportsImages = modelSupportsImages(provider, model)
 
@@ -362,6 +392,7 @@ export default function Home() {
                 isLast={idx === messages.length - 1}
                 isGenerating={isGenerating}
                 onRegenerate={idx === messages.length - 1 ? handleRegenerate : undefined}
+                onEdit={handleEditMessage}
               />
             ))
           )}
