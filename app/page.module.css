@@ -160,3 +160,61 @@
 .footer a:hover {
   text-decoration: underline;
 }
+
+/* ==================== */
+/* APPEARANCE VARIANTS  */
+/* ==================== */
+
+/* Compact Appearance */
+:global([data-appearance="compact"]) .messages {
+  padding: 0.5rem;
+  gap: 0.25rem;
+}
+
+:global([data-appearance="compact"]) .header {
+  padding: 0.5rem 0.75rem;
+}
+
+:global([data-appearance="compact"]) .footer {
+  padding: 0.5rem;
+}
+
+:global([data-appearance="compact"]) .empty {
+  padding: 1rem;
+}
+
+:global([data-appearance="compact"]) .empty h2 {
+  font-size: 1.25rem;
+}
+
+/* Terminal Appearance */
+:global([data-appearance="terminal"]) .container {
+  background: #0d0d0d;
+}
+
+:global([data-appearance="terminal"]) .main {
+  background: #0d0d0d;
+}
+
+:global([data-appearance="terminal"]) .header {
+  background: #0d0d0d;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+:global([data-appearance="terminal"]) .messages {
+  padding: 0.75rem 1rem;
+}
+
+:global([data-appearance="terminal"]) .empty h2 {
+  color: #22c55e;
+}
+
+:global([data-appearance="terminal"]) .empty h2::before {
+  content: "> ";
+  color: #22c55e;
+}
+
+:global([data-appearance="terminal"]) .footer {
+  background: #0d0d0d;
+  border-top: 1px solid #1a1a1a;
+}

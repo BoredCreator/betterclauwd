@@ -17,7 +17,11 @@ import {
   getApiKeys,
   hasAnyApiKey,
   generateId,
+  getMessageCount,
+  incrementMessageCount,
+  isPromoHidden,
 } from '@/lib/storage'
+import PromoMessage from './components/PromoMessage'
 import { getProvider, modelSupportsImages, getDefaultModel, PROVIDERS } from '@/lib/providers'
 import { generateChatTitle } from '@/lib/utils'
 
@@ -32,6 +36,8 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState(null)
   const [initialized, setInitialized] = useState(false)
+  const [showPromo, setShowPromo] = useState(false)
+  const [promoHiddenForever, setPromoHiddenForever] = useState(false)
 
   // Chat settings
   const [provider, setProvider] = useState('anthropic')
@@ -52,8 +58,9 @@ export default function Home() {
     setSystemPrompt(settings.defaultSystemPrompt)
     setTemperature(settings.defaultTemperature)
 
-    // Apply theme
+    // Apply theme and appearance
     document.documentElement.setAttribute('data-theme', settings.theme)
+    document.documentElement.setAttribute('data-appearance', settings.appearance || 'default')
 
     // Load chats
     const loadedChats = getChats()
@@ -63,6 +70,9 @@ export default function Home() {
     if (!hasAnyApiKey()) {
       setShowApiKeyModal(true)
     }
+
+    // Check if promo is hidden forever
+    setPromoHiddenForever(isPromoHidden())
 
     setInitialized(true)
   }, [])
@@ -217,6 +227,12 @@ export default function Home() {
       const finalMessages = [...updatedMessages, { ...assistantMessage, content: fullContent }]
       saveCurrentChat(finalMessages)
 
+      // Increment message count and check if we should show promo
+      const newCount = incrementMessageCount()
+      if (!promoHiddenForever && newCount > 0 && newCount % 100 === 0) {
+        setShowPromo(true)
+      }
+
     } catch (err) {
       if (err.name === 'AbortError') {
         // User stopped generation
@@ -237,7 +253,7 @@ export default function Home() {
       setIsGenerating(false)
       abortControllerRef.current = null
     }
-  }, [messages, provider, model, systemPrompt, temperature, saveCurrentChat])
+  }, [messages, provider, model, systemPrompt, temperature, saveCurrentChat, promoHiddenForever])
 
   // Stop generation
   const handleStop = useCallback(() => {
@@ -292,6 +308,16 @@ export default function Home() {
 
   // Check if current model supports images
   const supportsImages = modelSupportsImages(provider, model)
+
+  // Promo message handlers
+  const handleDismissPromo = useCallback(() => {
+    setShowPromo(false)
+  }, [])
+
+  const handleHidePromoForever = useCallback(() => {
+    setShowPromo(false)
+    setPromoHiddenForever(true)
+  }, [])
 
   // Don't render until initialized
   if (!initialized) {
@@ -395,6 +421,12 @@ export default function Home() {
                 onEdit={handleEditMessage}
               />
             ))
+          )}
+          {showPromo && (
+            <PromoMessage
+              onDismiss={handleDismissPromo}
+              onHideForever={handleHidePromoForever}
+            />
           )}
           <div ref={messagesEndRef} />
         </div>

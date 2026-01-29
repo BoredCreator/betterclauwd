@@ -346,3 +346,23 @@ input::placeholder, textarea::placeholder {
   white-space: nowrap;
   border: 0;
 }
+
+/* ==================== */
+/* APPEARANCE VARIANTS  */
+/* ==================== */
+
+/* Terminal Appearance */
+:root[data-appearance="terminal"] {
+  --terminal-prompt: ">";
+  --terminal-green: #22c55e;
+}
+
+:root[data-appearance="terminal"] body {
+  font-size: 13px;
+}
+
+/* Compact Appearance */
+:root[data-appearance="compact"] body {
+  font-size: 13px;
+  line-height: 1.4;
+}

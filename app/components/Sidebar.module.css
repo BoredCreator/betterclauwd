@@ -206,3 +206,134 @@
   border-color: var(--accent);
   color: var(--text);
 }
+
+/* ==================== */
+/* APPEARANCE VARIANTS  */
+/* ==================== */
+
+/* Compact Appearance */
+:global([data-appearance="compact"]) .sidebar {
+  width: 240px;
+}
+
+:global([data-appearance="compact"]) .header {
+  padding: 0.5rem 0.75rem;
+}
+
+:global([data-appearance="compact"]) .title {
+  font-size: 0.9rem;
+}
+
+:global([data-appearance="compact"]) .newChatButton {
+  margin: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+:global([data-appearance="compact"]) .search {
+  padding: 0 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+:global([data-appearance="compact"]) .searchInput {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+:global([data-appearance="compact"]) .chatList {
+  padding: 0.25rem;
+}
+
+:global([data-appearance="compact"]) .chatItem {
+  padding: 0.5rem;
+  margin-bottom: 0.125rem;
+}
+
+:global([data-appearance="compact"]) .chatTitle {
+  font-size: 0.8rem;
+}
+
+:global([data-appearance="compact"]) .chatMeta {
+  font-size: 0.65rem;
+}
+
+:global([data-appearance="compact"]) .footer {
+  padding: 0.5rem;
+}
+
+:global([data-appearance="compact"]) .settingsButton {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+/* Terminal Appearance */
+:global([data-appearance="terminal"]) .sidebar {
+  background: #0a0a0a;
+  border-right: 1px solid #1a1a1a;
+}
+
+:global([data-appearance="terminal"]) .header {
+  border-bottom: 1px solid #1a1a1a;
+}
+
+:global([data-appearance="terminal"]) .title {
+  color: #22c55e;
+}
+
+:global([data-appearance="terminal"]) .title::before {
+  content: "~/";
+}
+
+:global([data-appearance="terminal"]) .newChatButton {
+  background: transparent;
+  border: 1px dashed #333;
+  border-radius: 0;
+}
+
+:global([data-appearance="terminal"]) .newChatButton:hover {
+  border-color: #22c55e;
+  color: #22c55e;
+  background: transparent;
+}
+
+:global([data-appearance="terminal"]) .searchInput {
+  background: #0d0d0d;
+  border: 1px solid #1a1a1a;
+  border-radius: 0;
+}
+
+:global([data-appearance="terminal"]) .searchInput:focus {
+  border-color: #22c55e;
+}
+
+:global([data-appearance="terminal"]) .chatItem {
+  border-radius: 0;
+}
+
+:global([data-appearance="terminal"]) .chatItem:hover {
+  background: #111;
+}
+
+:global([data-appearance="terminal"]) .chatItem.active {
+  background: #111;
+  border-left: 2px solid #22c55e;
+}
+
+:global([data-appearance="terminal"]) .chatTitle::before {
+  content: "# ";
+  color: #22c55e;
+}
+
+:global([data-appearance="terminal"]) .footer {
+  border-top: 1px solid #1a1a1a;
+}
+
+:global([data-appearance="terminal"]) .settingsButton {
+  border: 1px dashed #333;
+  border-radius: 0;
+}
+
+:global([data-appearance="terminal"]) .settingsButton:hover {
+  border-color: #22c55e;
+  color: #22c55e;
+}

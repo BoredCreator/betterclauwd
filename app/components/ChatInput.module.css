@@ -121,3 +121,71 @@
   border-color: var(--accent);
   border-style: dashed;
 }
+
+/* ==================== */
+/* APPEARANCE VARIANTS  */
+/* ==================== */
+
+/* Compact Appearance */
+:global([data-appearance="compact"]) .form {
+  padding: 0.5rem 0.75rem;
+}
+
+:global([data-appearance="compact"]) .inputWrapper {
+  padding: 0.375rem;
+}
+
+:global([data-appearance="compact"]) .textarea {
+  font-size: 13px;
+  min-height: 20px;
+}
+
+:global([data-appearance="compact"]) .attachButton,
+:global([data-appearance="compact"]) .sendButton,
+:global([data-appearance="compact"]) .stopButton {
+  width: 28px;
+  height: 28px;
+}
+
+/* Terminal Appearance */
+:global([data-appearance="terminal"]) .container {
+  background: #0d0d0d;
+  border-top: 1px solid #1a1a1a;
+}
+
+:global([data-appearance="terminal"]) .inputWrapper {
+  background: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  border-radius: 0;
+}
+
+:global([data-appearance="terminal"]) .inputWrapper:focus-within {
+  border-color: #22c55e;
+}
+
+:global([data-appearance="terminal"]) .textarea {
+  font-family: var(--font-geist-mono), monospace;
+}
+
+:global([data-appearance="terminal"]) .textarea::placeholder {
+  color: #444;
+}
+
+:global([data-appearance="terminal"]) .attachButton {
+  border-radius: 0;
+  border: 1px dashed #333;
+}
+
+:global([data-appearance="terminal"]) .attachButton:hover {
+  border-color: #22c55e;
+  color: #22c55e;
+}
+
+:global([data-appearance="terminal"]) .sendButton {
+  background: #22c55e;
+  border-radius: 0;
+}
+
+:global([data-appearance="terminal"]) .stopButton {
+  border-radius: 0;
+}

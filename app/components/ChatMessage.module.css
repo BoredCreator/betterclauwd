@@ -173,3 +173,108 @@
   border-color: var(--accent);
   color: var(--text);
 }
+
+/* ==================== */
+/* APPEARANCE VARIANTS  */
+/* ==================== */
+
+/* Compact Appearance */
+:global([data-appearance="compact"]) .message {
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+:global([data-appearance="compact"]) .header {
+  margin-bottom: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+:global([data-appearance="compact"]) .role {
+  font-size: 0.75rem;
+}
+
+:global([data-appearance="compact"]) .time {
+  font-size: 0.7rem;
+}
+
+:global([data-appearance="compact"]) .content {
+  line-height: 1.4;
+  font-size: 0.85rem;
+}
+
+:global([data-appearance="compact"]) .actions {
+  margin-top: 0.5rem;
+  padding-top: 0.25rem;
+}
+
+:global([data-appearance="compact"]) .actionButton {
+  padding: 0.125rem 0.375rem;
+  font-size: 0.7rem;
+}
+
+/* Terminal Appearance */
+:global([data-appearance="terminal"]) .message {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0.5rem 0;
+  margin-bottom: 0;
+  border-bottom: 1px dashed #1a1a1a;
+}
+
+:global([data-appearance="terminal"]) .user {
+  background: transparent;
+}
+
+:global([data-appearance="terminal"]) .assistant {
+  background: transparent;
+}
+
+:global([data-appearance="terminal"]) .header {
+  border-bottom: none;
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+:global([data-appearance="terminal"]) .role {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+:global([data-appearance="terminal"]) .user .role {
+  color: #3b82f6;
+}
+
+:global([data-appearance="terminal"]) .user .role::before {
+  content: "$ ";
+  color: #22c55e;
+}
+
+:global([data-appearance="terminal"]) .assistant .role {
+  color: #22c55e;
+}
+
+:global([data-appearance="terminal"]) .assistant .role::before {
+  content: "> ";
+  color: #22c55e;
+}
+
+:global([data-appearance="terminal"]) .content {
+  font-family: var(--font-geist-mono), monospace;
+  line-height: 1.5;
+}
+
+:global([data-appearance="terminal"]) .actions {
+  border-top: none;
+  padding-top: 0.25rem;
+}
+
+:global([data-appearance="terminal"]) .actionButton {
+  border: 1px dashed #333;
+  background: transparent;
+}
+
+:global([data-appearance="terminal"]) .actionButton:hover {
+  border-color: #22c55e;
+  color: #22c55e;
+}

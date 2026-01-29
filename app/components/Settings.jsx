@@ -73,6 +73,11 @@ export default function Settings({ isOpen, onClose }) {
     document.documentElement.setAttribute('data-theme', theme)
   }
 
+  const handleAppearanceChange = (appearance) => {
+    handleSettingChange('appearance', appearance)
+    document.documentElement.setAttribute('data-appearance', appearance)
+  }
+
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -151,6 +156,30 @@ export default function Settings({ isOpen, onClose }) {
                     onClick={() => handleThemeChange('light')}
                   >
                     Light
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Appearance</label>
+                <div className={styles.themeButtons}>
+                  <button
+                    className={`${styles.themeButton} ${settings.appearance === 'default' ? styles.active : ''}`}
+                    onClick={() => handleAppearanceChange('default')}
+                  >
+                    Default
+                  </button>
+                  <button
+                    className={`${styles.themeButton} ${settings.appearance === 'terminal' ? styles.active : ''}`}
+                    onClick={() => handleAppearanceChange('terminal')}
+                  >
+                    Terminal
+                  </button>
+                  <button
+                    className={`${styles.themeButton} ${settings.appearance === 'compact' ? styles.active : ''}`}
+                    onClick={() => handleAppearanceChange('compact')}
+                  >
+                    Compact
                   </button>
                 </div>
               </div>
