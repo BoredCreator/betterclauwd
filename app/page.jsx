@@ -44,6 +44,7 @@ export default function Home() {
   const [model, setModel] = useState('claude-sonnet-4-20250514')
   const [systemPrompt, setSystemPrompt] = useState('You are a helpful assistant.')
   const [temperature, setTemperature] = useState(0.7)
+  const [thinkingEnabled, setThinkingEnabled] = useState(false)
 
   // Refs
   const messagesEndRef = useRef(null)
@@ -206,6 +207,7 @@ export default function Home() {
           temperature,
           maxTokens: getSettings().defaultMaxTokens,
           signal: abortControllerRef.current.signal,
+          thinking: thinkingEnabled && provider === 'anthropic',
         }
       )
 
@@ -253,7 +255,7 @@ export default function Home() {
       setIsGenerating(false)
       abortControllerRef.current = null
     }
-  }, [messages, provider, model, systemPrompt, temperature, saveCurrentChat, promoHiddenForever])
+  }, [messages, provider, model, systemPrompt, temperature, saveCurrentChat, promoHiddenForever, thinkingEnabled])
 
   // Stop generation
   const handleStop = useCallback(() => {
@@ -387,6 +389,20 @@ export default function Home() {
             onProviderChange={setProvider}
             onModelChange={setModel}
           />
+
+          {/* Thinking Toggle - Only for Claude */}
+          {provider === 'anthropic' && (
+            <label className={styles.thinkingToggle} title="Enable extended thinking">
+              <input
+                type="checkbox"
+                checked={thinkingEnabled}
+                onChange={(e) => setThinkingEnabled(e.target.checked)}
+                className={styles.thinkingCheckbox}
+              />
+              <span className={styles.thinkingSlider}></span>
+              <span className={styles.thinkingLabel}>Thinking</span>
+            </label>
+          )}
 
           <button
             onClick={() => setShowApiKeyModal(true)}
