@@ -10,7 +10,7 @@ import ApiKeyModal from './components/ApiKeyModal'
 import Settings from './components/Settings'
 import {
   getChats,
-  saveChat,
+  saveChat as saveChatToStorage,
   deleteChat,
   getChatById,
   getSettings,
@@ -24,7 +24,7 @@ import {
 } from '@/lib/storage'
 import PromoMessage from './components/PromoMessage'
 import { getProvider, modelSupportsImages, getDefaultModel, PROVIDERS } from '@/lib/providers'
-import { generateChatTitle } from '@/lib/utils'
+import { generateChatTitle, autoGenerateTitle } from '@/lib/utils'
 
 export default function Home() {
   // State
@@ -144,7 +144,7 @@ export default function Home() {
       messages: updatedMessages,
     }
 
-    saveChat(chat)
+    saveChatToStorage(chat)
     setChats(getChats())
 
     if (!currentChatId) {
@@ -229,7 +229,24 @@ export default function Home() {
 
       // Save chat with final messages
       const finalMessages = [...updatedMessages, { ...assistantMessage, content: fullContent }]
-      saveCurrentChat(finalMessages)
+      const savedChatId = saveCurrentChat(finalMessages)
+
+      // Auto-generate title if enabled and it's a new chat (first exchange)
+      const settings = getSettings()
+      if (settings.autoGenerateTitle && finalMessages.length === 2 && savedChatId) {
+        const apiKeys = getApiKeys()
+        const customEndpoints = getCustomEndpoints()
+        autoGenerateTitle(finalMessages, provider, apiKeys[provider], customEndpoints[provider])
+          .then(title => {
+            if (title) {
+              const chat = getChatById(savedChatId)
+              if (chat) {
+                saveChat({ ...chat, title })
+                setChats(getChats())
+              }
+            }
+          })
+      }
 
       // Increment message count and check if we should show promo
       const newCount = incrementMessageCount()
