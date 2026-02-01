@@ -119,8 +119,12 @@ export default function Home() {
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    // Use instant scroll during generation to keep up with streaming
+    // Use smooth scroll otherwise for better UX
+    messagesEndRef.current?.scrollIntoView({
+      behavior: isGenerating ? 'auto' : 'smooth'
+    })
+  }, [messages, isGenerating])
 
   // Save last used model when it changes
   useEffect(() => {
@@ -349,7 +353,7 @@ export default function Home() {
   }, [messages, handleSend])
 
   // Edit message
-  const handleEditMessage = useCallback((messageId, newContent) => {
+  const handleEditMessage = useCallback(async (messageId, newContent) => {
     const messageIndex = messages.findIndex(m => m.id === messageId)
     if (messageIndex === -1) return
 
@@ -366,17 +370,88 @@ export default function Home() {
     // If it's a user message, remove all messages after it and regenerate
     if (editedMessage.role === 'user') {
       const messagesUpToEdit = updatedMessages.slice(0, messageIndex + 1)
-      setMessages(messagesUpToEdit)
-      saveCurrentChat(messagesUpToEdit)
 
-      // Regenerate response
-      handleSend(newContent, editedMessage.images)
+      const apiKeys = getApiKeys()
+      const apiKey = apiKeys[provider]
+
+      if (!apiKey) {
+        setError(`No API key configured for ${PROVIDERS[provider]?.name}. Please add one in Settings.`)
+        return
+      }
+
+      setError(null)
+      setIsGenerating(true)
+
+      // Create placeholder for assistant message
+      const assistantMessage = {
+        id: generateId(),
+        role: 'assistant',
+        content: '',
+        timestamp: new Date().toISOString(),
+      }
+
+      setMessages([...messagesUpToEdit, assistantMessage])
+
+      try {
+        abortControllerRef.current = new AbortController()
+
+        const customEndpoints = getCustomEndpoints()
+        const customProviderConfig = getCustomProviderConfig()
+        const endpointToUse = provider === 'custom'
+          ? customProviderConfig.endpoint
+          : customEndpoints[provider]
+        const providerInstance = getProvider(provider, endpointToUse)
+
+        const stream = providerInstance.sendMessage(
+          apiKey,
+          messagesUpToEdit.map(m => ({
+            role: m.role,
+            content: m.content,
+            images: m.images,
+          })),
+          {
+            model,
+            systemPrompt,
+            temperature,
+            maxTokens: getSettings().defaultMaxTokens,
+            signal: abortControllerRef.current.signal,
+            thinking: thinkingEnabled && provider === 'anthropic',
+          }
+        )
+
+        let fullContent = ''
+        for await (const chunk of stream) {
+          fullContent += chunk
+          setMessages(prev => {
+            const newMessages = [...prev]
+            newMessages[newMessages.length - 1] = {
+              ...newMessages[newMessages.length - 1],
+              content: fullContent,
+            }
+            return newMessages
+          })
+        }
+
+        const finalMessages = [...messagesUpToEdit, { ...assistantMessage, content: fullContent }]
+        saveCurrentChat(finalMessages)
+
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          // Keep partial response
+        } else {
+          setError(err.message || 'An error occurred while generating the response.')
+          setMessages(messagesUpToEdit)
+        }
+      } finally {
+        setIsGenerating(false)
+        abortControllerRef.current = null
+      }
     } else {
       // For assistant messages, just update the content
       setMessages(updatedMessages)
       saveCurrentChat(updatedMessages)
     }
-  }, [messages, saveCurrentChat, handleSend])
+  }, [messages, saveCurrentChat, provider, model, systemPrompt, temperature, thinkingEnabled])
 
   // Check if current model supports images
   const supportsImages = modelSupportsImages(provider, model)

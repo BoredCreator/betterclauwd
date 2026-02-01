@@ -38,11 +38,17 @@ function parseMarkdown(text) {
     return placeholder
   })
 
-  // Handle incomplete thinking blocks (still streaming)
-  normalized = normalized.replace(/```thinking\n([\s\S]*)$/, (match, code) => {
+  // Handle incomplete code blocks (still streaming) - any language
+  normalized = normalized.replace(/```(\w*)\n([\s\S]*)$/, (match, lang, code) => {
     const placeholder = `%%CODEBLOCK${codeBlocks.length}%%`
-    const thinkingHtml = `<details class="thinking-block thinking-streaming" open><summary></summary><div class="thinking-content">${escapeHtml(code.trim())}</div></details>`
-    codeBlocks.push(thinkingHtml)
+
+    if (lang === 'thinking') {
+      const thinkingHtml = `<details class="thinking-block thinking-streaming" open><summary></summary><div class="thinking-content">${escapeHtml(code.trim())}</div></details>`
+      codeBlocks.push(thinkingHtml)
+    } else {
+      const highlighted = highlightCode(code.trim(), lang)
+      codeBlocks.push(`<pre class="streaming"><code class="language-${lang || 'text'}">${highlighted}</code></pre>`)
+    }
     return placeholder
   })
 
@@ -137,7 +143,13 @@ function highlightCode(code, lang) {
   let highlighted = escapeHtml(code)
 
   // Comments (single line) - must match the escaped versions
-  highlighted = highlighted.replace(/(\/\/.*$|#.*$)/gm, '<span class="code-comment">$1</span>')
+  // For # comments, exclude C/C++ preprocessor directives
+  highlighted = highlighted.replace(/(\/\/.*$)/gm, '<span class="code-comment">$1</span>')
+  // Only treat # as comment for languages that use it (Python, Ruby, Shell, etc.)
+  // Exclude C/C++ preprocessor directives like #include, #define, etc.
+  if (!['c', 'cpp', 'c++', 'h', 'hpp', 'objc', 'objective-c'].includes(lang?.toLowerCase())) {
+    highlighted = highlighted.replace(/^(\s*#(?!include|define|pragma|ifdef|ifndef|endif|else|elif|error|warning|undef|line).*)$/gm, '<span class="code-comment">$1</span>')
+  }
 
   // Multi-line comments
   highlighted = highlighted.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="code-comment">$1</span>')
