@@ -454,12 +454,9 @@ export default function Home() {
         <div className={styles.messages}>
           {messages.length === 0 ? (
             <div className={styles.empty}>
+              <img src="/icon-light.png" alt="betterclauwd" className={styles.logoLight} />
+              <img src="/icon-dark.png" alt="betterclauwd" className={styles.logoDark} />
               <h2>betterclauwd</h2>
-              <p>Start a conversation with any AI model</p>
-              <div className={styles.hints}>
-                <span>Supports: Claude, GPT, Gemini, Grok, DeepSeek</span>
-                <span>All data stored locally</span>
-              </div>
             </div>
           ) : (
             messages.map((msg, idx) => (

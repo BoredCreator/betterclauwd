@@ -184,6 +184,33 @@
   margin-bottom: 1.5rem;
 }
 
+/* Logo styles - show appropriate version based on theme */
+.logoLight,
+.logoDark {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 1rem;
+  object-fit: contain;
+}
+
+/* Dark theme (default) - show light logo */
+.logoLight {
+  display: block;
+}
+
+.logoDark {
+  display: none;
+}
+
+/* Light theme - show dark logo */
+:global([data-theme="light"]) .logoLight {
+  display: none;
+}
+
+:global([data-theme="light"]) .logoDark {
+  display: block;
+}
+
 .hints {
   display: flex;
   flex-direction: column;

@@ -14,6 +14,9 @@ export default function RootLayout({ children }) {
       <head>
         <title>betterclauwd - Multi-Provider AI Chat</title>
         <meta name="description" content="Chat with AI models from multiple providers - Claude, GPT, Gemini, Grok, DeepSeek" />
+        <link rel="icon" href="/icon-light.png" media="(prefers-color-scheme: light)" />
+        <link rel="icon" href="/icon-dark.png" media="(prefers-color-scheme: dark)" />
+        <link rel="apple-touch-icon" href="/icon-dark.png" />
       </head>
       <body className={`${jetbrainsMono.variable} antialiased`}>
         {children}

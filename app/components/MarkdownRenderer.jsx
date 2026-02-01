@@ -25,8 +25,15 @@ function parseMarkdown(text) {
   const codeBlocks = []
   normalized = normalized.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
     const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`
-    const highlighted = highlightCode(code.trim(), lang)
-    codeBlocks.push(`<pre><code class="language-${lang || 'text'}">${highlighted}</code></pre>`)
+
+    // Special handling for thinking blocks
+    if (lang === 'thinking') {
+      const thinkingHtml = `<details class="thinking-block"><summary>View thinking process</summary><div class="thinking-content">${escapeHtml(code.trim())}</div></details>`
+      codeBlocks.push(thinkingHtml)
+    } else {
+      const highlighted = highlightCode(code.trim(), lang)
+      codeBlocks.push(`<pre><code class="language-${lang || 'text'}">${highlighted}</code></pre>`)
+    }
     return placeholder
   })
 

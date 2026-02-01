@@ -334,6 +334,50 @@ input::placeholder, textarea::placeholder {
 .code-function { color: #61afef; }
 .code-variable { color: #e06c75; }
 
+/* Thinking block styles */
+.thinking-block {
+  margin: 0.75rem 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  overflow: hidden;
+}
+
+.thinking-block summary {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.thinking-block summary::before {
+  content: "🧠";
+}
+
+.thinking-block summary:hover {
+  color: var(--text);
+}
+
+.thinking-block[open] summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.thinking-content {
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  line-height: 1.5;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
 /* Utility Classes */
 .sr-only {
   position: absolute;
