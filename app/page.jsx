@@ -492,6 +492,12 @@ export default function Home() {
               <img src="/icon-light.png" alt="betterclauwd" className={styles.logoLight} />
               <img src="/icon-dark.png" alt="betterclauwd" className={styles.logoDark} />
               <h2>betterclauwd</h2>
+              <p className={styles.openSource}>
+                This project is open source. Code available on{' '}
+                <a href="https://github.com/BoredCreator/betterclauwd" target="_blank" rel="noopener noreferrer">
+                  GitHub
+                </a>
+              </p>
 
               {/* System Prompt Display */}
               <div className={styles.systemPromptContainer}>

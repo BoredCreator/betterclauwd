@@ -47,7 +47,8 @@ export default function ChatInput({
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if ((!input.trim() && images.length === 0) || disabled || isGenerating) return
+    // Always require text - images alone won't work with Claude API
+    if (!input.trim() || disabled || isGenerating) return
 
     onSend(input.trim(), images)
     setInput('')
@@ -118,7 +119,7 @@ export default function ChatInput({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isGenerating ? 'Generating...' : 'Type a message... (Shift+Enter for new line)'}
+            placeholder={isGenerating ? 'Generating...' : images.length > 0 ? 'Describe the image... (required)' : 'Type a message... (Shift+Enter for new line)'}
             disabled={disabled || isGenerating}
             className={styles.textarea}
             rows={1}
@@ -148,9 +149,9 @@ export default function ChatInput({
 
             <button
               type="submit"
-              disabled={(!input.trim() && images.length === 0) || disabled || isGenerating}
+              disabled={!input.trim() || disabled || isGenerating}
               className={styles.sendButton}
-              title="Send message"
+              title={images.length > 0 && !input.trim() ? "Add text to send with images" : "Send message"}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="22" y1="2" x2="11" y2="13"/>
