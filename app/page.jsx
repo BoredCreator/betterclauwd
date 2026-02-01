@@ -64,6 +64,22 @@ export default function Home() {
     document.documentElement.setAttribute('data-theme', settings.theme)
     document.documentElement.setAttribute('data-appearance', settings.appearance || 'default')
 
+    // Apply custom appearance settings if in custom mode
+    if (settings.appearance === 'custom' && settings.customAppearance) {
+      const custom = settings.customAppearance
+      const root = document.documentElement
+      root.style.setProperty('--custom-font-size', `${custom.fontSize || 14}px`)
+      root.style.setProperty('--custom-line-height', custom.lineHeight || 1.6)
+      root.style.setProperty('--custom-message-gap', `${custom.messageGap ?? 8}px`)
+      root.style.setProperty('--custom-message-padding', `${custom.messagePadding || 12}px`)
+      root.style.setProperty('--custom-border-radius', `${custom.borderRadius || 4}px`)
+      root.style.setProperty('--custom-code-font-size', `${custom.codeBlockFontSize || 13}px`)
+      root.setAttribute('data-custom-base', custom.baseStyle || 'default')
+      root.setAttribute('data-show-timestamps', custom.showTimestamps !== false ? 'true' : 'false')
+      root.setAttribute('data-show-avatars', custom.showAvatars ? 'true' : 'false')
+      root.setAttribute('data-compact-headers', custom.compactHeaders ? 'true' : 'false')
+    }
+
     // Load chats
     const loadedChats = getChats()
     setChats(loadedChats)

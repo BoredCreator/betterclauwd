@@ -366,3 +366,48 @@ input::placeholder, textarea::placeholder {
   font-size: 13px;
   line-height: 1.4;
 }
+
+/* Custom Appearance */
+:root[data-appearance="custom"] {
+  --custom-font-size: 14px;
+  --custom-line-height: 1.6;
+  --custom-message-gap: 8px;
+  --custom-message-padding: 12px;
+  --custom-border-radius: 4px;
+  --custom-code-font-size: 13px;
+}
+
+:root[data-appearance="custom"] body {
+  font-size: var(--custom-font-size);
+  line-height: var(--custom-line-height);
+}
+
+:root[data-appearance="custom"] pre,
+:root[data-appearance="custom"] code {
+  font-size: var(--custom-code-font-size);
+}
+
+:root[data-appearance="custom"] pre {
+  border-radius: var(--custom-border-radius);
+}
+
+/* Custom with terminal base */
+:root[data-appearance="custom"][data-custom-base="terminal"] {
+  --terminal-prompt: ">";
+  --terminal-green: #22c55e;
+}
+
+:root[data-appearance="custom"][data-custom-base="terminal"] body {
+  background: #0d0d0d;
+}
+
+/* Hide timestamps when disabled */
+:root[data-show-timestamps="false"] [class*="time"] {
+  display: none !important;
+}
+
+/* Compact headers */
+:root[data-compact-headers="true"] [class*="header"] {
+  margin-bottom: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
+}

@@ -59,6 +59,20 @@ export default function ChatMessage({ message, onRegenerate, onEdit, isLast, isG
   return (
     <div className={`${styles.message} ${isUser ? styles.user : styles.assistant}`}>
       <div className={styles.header}>
+        <div className={styles.avatar}>
+          {isUser ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+          )}
+        </div>
         <span className={styles.role}>{isUser ? 'You' : 'Assistant'}</span>
         <span className={styles.time}>{formatDateTime(message.timestamp)}</span>
       </div>

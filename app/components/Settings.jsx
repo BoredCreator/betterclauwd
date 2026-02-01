@@ -78,6 +78,31 @@ export default function Settings({ isOpen, onClose }) {
   const handleAppearanceChange = (appearance) => {
     handleSettingChange('appearance', appearance)
     document.documentElement.setAttribute('data-appearance', appearance)
+    if (appearance === 'custom') {
+      applyCustomAppearance(settings.customAppearance || {})
+    }
+  }
+
+  const handleCustomAppearanceChange = (key, value) => {
+    const newCustom = { ...(settings.customAppearance || {}), [key]: value }
+    handleSettingChange('customAppearance', newCustom)
+    if (settings.appearance === 'custom') {
+      applyCustomAppearance(newCustom)
+    }
+  }
+
+  const applyCustomAppearance = (custom) => {
+    const root = document.documentElement
+    root.style.setProperty('--custom-font-size', `${custom.fontSize || 14}px`)
+    root.style.setProperty('--custom-line-height', custom.lineHeight || 1.6)
+    root.style.setProperty('--custom-message-gap', `${custom.messageGap ?? 8}px`)
+    root.style.setProperty('--custom-message-padding', `${custom.messagePadding || 12}px`)
+    root.style.setProperty('--custom-border-radius', `${custom.borderRadius || 4}px`)
+    root.style.setProperty('--custom-code-font-size', `${custom.codeBlockFontSize || 13}px`)
+    root.setAttribute('data-custom-base', custom.baseStyle || 'default')
+    root.setAttribute('data-show-timestamps', custom.showTimestamps !== false ? 'true' : 'false')
+    root.setAttribute('data-show-avatars', custom.showAvatars ? 'true' : 'false')
+    root.setAttribute('data-compact-headers', custom.compactHeaders ? 'true' : 'false')
   }
 
   const handleEndpointChange = (providerId, value) => {
@@ -200,8 +225,162 @@ export default function Settings({ isOpen, onClose }) {
                   >
                     Compact
                   </button>
+                  <button
+                    className={`${styles.themeButton} ${settings.appearance === 'custom' ? styles.active : ''}`}
+                    onClick={() => handleAppearanceChange('custom')}
+                  >
+                    Custom
+                  </button>
                 </div>
               </div>
+
+              {settings.appearance === 'custom' && (
+                <div className={styles.customAppearance}>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Base Style</label>
+                    <div className={styles.themeButtons}>
+                      <button
+                        className={`${styles.themeButton} ${(settings.customAppearance?.baseStyle || 'default') === 'default' ? styles.active : ''}`}
+                        onClick={() => handleCustomAppearanceChange('baseStyle', 'default')}
+                      >
+                        Normal
+                      </button>
+                      <button
+                        className={`${styles.themeButton} ${settings.customAppearance?.baseStyle === 'terminal' ? styles.active : ''}`}
+                        onClick={() => handleCustomAppearanceChange('baseStyle', 'terminal')}
+                      >
+                        Terminal
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className={styles.field}>
+                    <label className={styles.label}>
+                      Font Size: {settings.customAppearance?.fontSize || 14}px
+                    </label>
+                    <input
+                      type="range"
+                      min="10"
+                      max="20"
+                      step="1"
+                      value={settings.customAppearance?.fontSize || 14}
+                      onChange={(e) => handleCustomAppearanceChange('fontSize', parseInt(e.target.value))}
+                      className={styles.slider}
+                    />
+                  </div>
+
+                  <div className={styles.field}>
+                    <label className={styles.label}>
+                      Line Height: {settings.customAppearance?.lineHeight || 1.6}
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="2.5"
+                      step="0.1"
+                      value={settings.customAppearance?.lineHeight || 1.6}
+                      onChange={(e) => handleCustomAppearanceChange('lineHeight', parseFloat(e.target.value))}
+                      className={styles.slider}
+                    />
+                  </div>
+
+                  <div className={styles.field}>
+                    <label className={styles.label}>
+                      Message Spacing: {settings.customAppearance?.messageGap ?? 8}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-10"
+                      max="24"
+                      step="1"
+                      value={settings.customAppearance?.messageGap ?? 8}
+                      onChange={(e) => handleCustomAppearanceChange('messageGap', parseInt(e.target.value))}
+                      className={styles.slider}
+                    />
+                  </div>
+
+                  <div className={styles.field}>
+                    <label className={styles.label}>
+                      Message Padding: {settings.customAppearance?.messagePadding || 12}px
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="24"
+                      step="2"
+                      value={settings.customAppearance?.messagePadding || 12}
+                      onChange={(e) => handleCustomAppearanceChange('messagePadding', parseInt(e.target.value))}
+                      className={styles.slider}
+                    />
+                  </div>
+
+                  <div className={styles.field}>
+                    <label className={styles.label}>
+                      Border Radius: {settings.customAppearance?.borderRadius || 4}px
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="16"
+                      step="1"
+                      value={settings.customAppearance?.borderRadius || 4}
+                      onChange={(e) => handleCustomAppearanceChange('borderRadius', parseInt(e.target.value))}
+                      className={styles.slider}
+                    />
+                  </div>
+
+                  <div className={styles.field}>
+                    <label className={styles.label}>
+                      Code Block Font Size: {settings.customAppearance?.codeBlockFontSize || 13}px
+                    </label>
+                    <input
+                      type="range"
+                      min="10"
+                      max="18"
+                      step="1"
+                      value={settings.customAppearance?.codeBlockFontSize || 13}
+                      onChange={(e) => handleCustomAppearanceChange('codeBlockFontSize', parseInt(e.target.value))}
+                      className={styles.slider}
+                    />
+                  </div>
+
+                  <div className={styles.field}>
+                    <label className={styles.toggleLabel}>
+                      <input
+                        type="checkbox"
+                        checked={settings.customAppearance?.showTimestamps !== false}
+                        onChange={(e) => handleCustomAppearanceChange('showTimestamps', e.target.checked)}
+                        className={styles.checkbox}
+                      />
+                      <span className={styles.toggleText}>Show timestamps</span>
+                    </label>
+                  </div>
+
+                  <div className={styles.field}>
+                    <label className={styles.toggleLabel}>
+                      <input
+                        type="checkbox"
+                        checked={settings.customAppearance?.showAvatars || false}
+                        onChange={(e) => handleCustomAppearanceChange('showAvatars', e.target.checked)}
+                        className={styles.checkbox}
+                      />
+                      <span className={styles.toggleText}>Show role avatars</span>
+                    </label>
+                  </div>
+
+                  <div className={styles.field}>
+                    <label className={styles.toggleLabel}>
+                      <input
+                        type="checkbox"
+                        checked={settings.customAppearance?.compactHeaders || false}
+                        onChange={(e) => handleCustomAppearanceChange('compactHeaders', e.target.checked)}
+                        className={styles.checkbox}
+                      />
+                      <span className={styles.toggleText}>Compact message headers</span>
+                    </label>
+                  </div>
+                </div>
+              )}
 
               <div className={styles.field}>
                 <label className={styles.label}>Default Provider</label>
