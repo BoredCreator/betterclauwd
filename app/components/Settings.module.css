@@ -279,3 +279,78 @@
   color: var(--text-secondary);
   font-style: italic;
 }
+
+/* Toggle checkbox styles */
+.toggleLabel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--text);
+  cursor: pointer;
+}
+
+.toggleText {
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.toggleHint {
+  width: 100%;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-left: 26px;
+}
+
+/* Token stats */
+.tokenStats {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+.tokenStats h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.statRow span:first-child {
+  color: var(--text-secondary);
+}
+
+.statRow span:last-child {
+  color: var(--text);
+  font-family: var(--font-geist-mono), monospace;
+}
+
+.resetButton {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.resetButton:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}

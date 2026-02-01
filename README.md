@@ -12,13 +12,5 @@ Quick vibecoded site for using claude(and other apis) on browser because betterg
 - **Settings**: Theme toggle, default model, temperature, system prompts
 - **Streaming**: Real-time response streaming from all providers
 
-## Getting Started
-
-```bash
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000)
 
 ## Made with ❤️ by [Neel Anshu](https://flippedbyneel.com)

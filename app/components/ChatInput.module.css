@@ -84,36 +84,28 @@
   color: var(--text);
 }
 
-.sendButton,
-.stopButton {
+.sendButton {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: var(--text);
-  border: none;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: var(--bg);
+  color: var(--text);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .sendButton:hover:not(:disabled) {
-  opacity: 0.9;
+  border-color: var(--accent);
+  background: var(--bg-secondary);
 }
 
 .sendButton:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-.stopButton {
-  background: var(--error);
-}
-
-.stopButton:hover {
-  opacity: 0.9;
 }
 
 /* Drag and drop styling */
@@ -141,8 +133,7 @@
 }
 
 :global([data-appearance="compact"]) .attachButton,
-:global([data-appearance="compact"]) .sendButton,
-:global([data-appearance="compact"]) .stopButton {
+:global([data-appearance="compact"]) .sendButton {
   width: 28px;
   height: 28px;
 }
@@ -182,10 +173,12 @@
 }
 
 :global([data-appearance="terminal"]) .sendButton {
-  background: #22c55e;
+  background: #111;
+  border: 1px dashed #333;
   border-radius: 0;
 }
 
-:global([data-appearance="terminal"]) .stopButton {
-  border-radius: 0;
+:global([data-appearance="terminal"]) .sendButton:hover:not(:disabled) {
+  border-color: #22c55e;
+  color: #22c55e;
 }

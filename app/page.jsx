@@ -20,6 +20,7 @@ import {
   getMessageCount,
   incrementMessageCount,
   isPromoHidden,
+  getCustomEndpoints,
 } from '@/lib/storage'
 import PromoMessage from './components/PromoMessage'
 import { getProvider, modelSupportsImages, getDefaultModel, PROVIDERS } from '@/lib/providers'
@@ -193,7 +194,8 @@ export default function Home() {
       abortControllerRef.current = new AbortController()
 
       // Get provider and send message
-      const providerInstance = getProvider(provider)
+      const customEndpoints = getCustomEndpoints()
+      const providerInstance = getProvider(provider, customEndpoints[provider])
       const stream = providerInstance.sendMessage(
         apiKey,
         updatedMessages.map(m => ({
@@ -445,6 +447,17 @@ export default function Home() {
             />
           )}
           <div ref={messagesEndRef} />
+
+          {/* Floating stop button */}
+          {isGenerating && (
+            <button
+              onClick={handleStop}
+              className={styles.stopOverlay}
+              title="Stop generating"
+            >
+              Stop
+            </button>
+          )}
         </div>
 
         {/* Error */}

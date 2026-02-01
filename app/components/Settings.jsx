@@ -2,14 +2,16 @@
 
 import { useState } from 'react'
 import styles from './Settings.module.css'
-import { PROVIDERS, getModelMaxTokens } from '@/lib/providers'
-import { getApiKeys, setApiKey, getSettings, updateSettings, exportAllData, importData, clearAllData } from '@/lib/storage'
+import { PROVIDERS, getModelMaxTokens, DEFAULT_ENDPOINTS } from '@/lib/providers'
+import { getApiKeys, setApiKey, getSettings, updateSettings, exportAllData, importData, clearAllData, getTokenUsage, resetTokenUsage, getCustomEndpoints, setCustomEndpoint } from '@/lib/storage'
 
 export default function Settings({ isOpen, onClose }) {
   const [activeTab, setActiveTab] = useState('api-keys')
   const [keys, setKeys] = useState(getApiKeys())
   const [settings, setSettings] = useState(getSettings())
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [tokenUsage, setTokenUsage] = useState(getTokenUsage())
+  const [customEndpoints, setCustomEndpoints] = useState(getCustomEndpoints())
 
   if (!isOpen) return null
 
@@ -78,6 +80,17 @@ export default function Settings({ isOpen, onClose }) {
     document.documentElement.setAttribute('data-appearance', appearance)
   }
 
+  const handleEndpointChange = (providerId, value) => {
+    const newEndpoints = { ...customEndpoints, [providerId]: value }
+    setCustomEndpoints(newEndpoints)
+    setCustomEndpoint(providerId, value)
+  }
+
+  const handleResetTokenUsage = () => {
+    resetTokenUsage()
+    setTokenUsage(getTokenUsage())
+  }
+
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -103,6 +116,12 @@ export default function Settings({ isOpen, onClose }) {
             onClick={() => setActiveTab('defaults')}
           >
             Defaults
+          </button>
+          <button
+            className={`${styles.tab} ${activeTab === 'advanced' ? styles.active : ''}`}
+            onClick={() => setActiveTab('advanced')}
+          >
+            Advanced
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'data' ? styles.active : ''}`}
@@ -253,6 +272,76 @@ export default function Settings({ isOpen, onClose }) {
                   rows={4}
                 />
               </div>
+
+              <div className={styles.field}>
+                <label className={styles.toggleLabel}>
+                  <input
+                    type="checkbox"
+                    checked={settings.autoGenerateTitle || false}
+                    onChange={(e) => handleSettingChange('autoGenerateTitle', e.target.checked)}
+                    className={styles.checkbox}
+                  />
+                  <span className={styles.toggleText}>Auto-generate chat titles</span>
+                  <span className={styles.toggleHint}>Uses a cheaper model to generate titles automatically</span>
+                </label>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.toggleLabel}>
+                  <input
+                    type="checkbox"
+                    checked={settings.tokenTrackingEnabled || false}
+                    onChange={(e) => handleSettingChange('tokenTrackingEnabled', e.target.checked)}
+                    className={styles.checkbox}
+                  />
+                  <span className={styles.toggleText}>Enable token tracking</span>
+                  <span className={styles.toggleHint}>Track token usage and estimated costs</span>
+                </label>
+              </div>
+
+              {settings.tokenTrackingEnabled && (
+                <div className={styles.tokenStats}>
+                  <h4>Total Usage</h4>
+                  <div className={styles.statRow}>
+                    <span>Input tokens:</span>
+                    <span>{tokenUsage.total.input.toLocaleString()}</span>
+                  </div>
+                  <div className={styles.statRow}>
+                    <span>Output tokens:</span>
+                    <span>{tokenUsage.total.output.toLocaleString()}</span>
+                  </div>
+                  <div className={styles.statRow}>
+                    <span>Estimated cost:</span>
+                    <span>${tokenUsage.total.cost.toFixed(4)}</span>
+                  </div>
+                  <button onClick={handleResetTokenUsage} className={styles.resetButton}>
+                    Reset Usage Stats
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'advanced' && (
+            <div className={styles.section}>
+              <p className={styles.sectionDesc}>
+                Custom API endpoints for each provider. Leave blank to use defaults.
+              </p>
+              {Object.values(PROVIDERS).map(provider => (
+                <div key={provider.id} className={styles.field}>
+                  <label className={styles.label}>{provider.name} Endpoint</label>
+                  <input
+                    type="text"
+                    value={customEndpoints[provider.id] || ''}
+                    onChange={(e) => handleEndpointChange(provider.id, e.target.value)}
+                    placeholder={DEFAULT_ENDPOINTS[provider.id]}
+                    className={styles.input}
+                  />
+                </div>
+              ))}
+              <p className={styles.note}>
+                Note: Custom endpoints must be compatible with the provider's API format.
+              </p>
             </div>
           )}
 
