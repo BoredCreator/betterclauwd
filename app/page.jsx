@@ -84,14 +84,16 @@ export default function Home() {
       const root = document.documentElement
       root.style.setProperty('--custom-font-size', `${custom.fontSize || 14}px`)
 
-      // Calculate line-height and message-gap from compactness (0-100)
+      // Calculate line-height, message-gap, and padding from compactness (0-100)
+      // compactness 0 = spacious, compactness 100 = ultra-compact
       const compactness = custom.compactness ?? 50
-      const lineHeight = 2.0 - (compactness / 100) * 0.8 // 2.0 to 1.2
-      const messageGap = Math.max(0, 16 - (compactness / 100) * 16) // 16 to 0
+      const lineHeight = 2.0 - (compactness / 100) * 0.9 // 2.0 to 1.1
+      const messageGap = 20 - (compactness / 100) * 24 // 20 to -4
+      const messagePadding = 16 - (compactness / 100) * 14 // 16 to 2
 
       root.style.setProperty('--custom-line-height', lineHeight.toFixed(2))
       root.style.setProperty('--custom-message-gap', `${Math.round(messageGap)}px`)
-      root.style.setProperty('--custom-message-padding', `${custom.messagePadding || 12}px`)
+      root.style.setProperty('--custom-message-padding', `${Math.round(messagePadding)}px`)
       root.style.setProperty('--custom-border-radius', `${custom.borderRadius || 4}px`)
       root.style.setProperty('--custom-code-font-size', `${custom.codeBlockFontSize || 13}px`)
       root.setAttribute('data-custom-base', custom.baseStyle || 'default')

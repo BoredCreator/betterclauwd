@@ -195,7 +195,7 @@
   object-fit: contain;
 }
 
-/* Dark theme (default) - show light logo */
+/* Dark theme (default) - show light icon (white/light colored for dark bg) */
 .logoLight {
   display: block;
 }
@@ -204,13 +204,13 @@
   display: none;
 }
 
-/* Light theme - show dark logo */
+/* Light theme - show dark icon (dark colored for light bg) */
 :global([data-theme="light"]) .logoLight {
-  display: none;
+  display: none !important;
 }
 
 :global([data-theme="light"]) .logoDark {
-  display: block;
+  display: block !important;
 }
 
 .hints {
