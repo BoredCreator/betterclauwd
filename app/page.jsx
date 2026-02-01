@@ -143,24 +143,19 @@ export default function Home() {
     }
   }, [currentChatId])
 
-  // Create new chat
+  // Create new chat - keep current system prompt
   const handleNewChat = useCallback(() => {
     setCurrentChatId(null)
     setMessages([])
     setError(null)
 
     // Use last used model if available, otherwise defaults
-    const settings = getSettings()
     const lastModel = getLastUsedModel()
     if (lastModel) {
       setProvider(lastModel.provider)
       setModel(lastModel.model)
-    } else {
-      setProvider(settings.defaultProvider)
-      setModel(settings.defaultModel)
     }
-    setSystemPrompt(settings.defaultSystemPrompt)
-    setTemperature(settings.defaultTemperature)
+    // Keep current system prompt - don't reset it
   }, [])
 
   // Select chat

@@ -17,7 +17,7 @@ export default function ChatMessage({ message, onRegenerate, onEdit, isLast, isG
     if (isEditing && textareaRef.current) {
       textareaRef.current.style.height = 'auto'
       textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px'
-      textareaRef.current.focus()
+      textareaRef.current.focus({ preventScroll: true })
     }
   }, [isEditing, editContent])
 

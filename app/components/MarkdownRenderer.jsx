@@ -29,12 +29,20 @@ function parseMarkdown(text) {
 
     // Special handling for thinking blocks
     if (lang === 'thinking') {
-      const thinkingHtml = `<details class="thinking-block"><summary>View thinking process</summary><div class="thinking-content">${escapeHtml(code.trim())}</div></details>`
+      const thinkingHtml = `<details class="thinking-block" open><summary></summary><div class="thinking-content">${escapeHtml(code.trim())}</div></details>`
       codeBlocks.push(thinkingHtml)
     } else {
       const highlighted = highlightCode(code.trim(), lang)
       codeBlocks.push(`<pre><code class="language-${lang || 'text'}">${highlighted}</code></pre>`)
     }
+    return placeholder
+  })
+
+  // Handle incomplete thinking blocks (still streaming)
+  normalized = normalized.replace(/```thinking\n([\s\S]*)$/, (match, code) => {
+    const placeholder = `%%CODEBLOCK${codeBlocks.length}%%`
+    const thinkingHtml = `<details class="thinking-block thinking-streaming" open><summary></summary><div class="thinking-content">${escapeHtml(code.trim())}</div></details>`
+    codeBlocks.push(thinkingHtml)
     return placeholder
   })
 

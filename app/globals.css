@@ -357,7 +357,11 @@ input::placeholder, textarea::placeholder {
 }
 
 .thinking-block summary::before {
-  content: "🧠";
+  content: "Show thinking";
+}
+
+.thinking-block[open] summary::before {
+  content: "Hide thinking";
 }
 
 .thinking-block summary:hover {
@@ -376,6 +380,10 @@ input::placeholder, textarea::placeholder {
   line-height: 1.5;
   max-height: 300px;
   overflow-y: auto;
+}
+
+.thinking-streaming summary::before {
+  content: "Thinking...";
 }
 
 /* Utility Classes */

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import styles from './Settings.module.css'
+import Slider from './Slider'
 import { PROVIDERS, getModelMaxTokens, DEFAULT_ENDPOINTS } from '@/lib/providers'
 import { getApiKeys, setApiKey, getSettings, updateSettings, exportAllData, importData, clearAllData, getTokenUsage, resetTokenUsage, getCustomEndpoints, setCustomEndpoint, getCustomProviderConfig, updateCustomProviderConfig } from '@/lib/storage'
 
@@ -98,17 +99,18 @@ export default function Settings({ isOpen, onClose }) {
     const root = document.documentElement
     root.style.setProperty('--custom-font-size', `${custom.fontSize || 14}px`)
 
-    // Calculate line-height and message-gap from compactness (0-100)
-    // compactness 0 = spacious (line-height 2.0, gap 16px)
-    // compactness 50 = normal (line-height 1.6, gap 8px)
-    // compactness 100 = compact (line-height 1.2, gap 0px)
+    // Calculate line-height, message-gap, and padding from compactness (0-100)
+    // compactness 0 = spacious (line-height 2.0, gap 20px, padding 16px)
+    // compactness 50 = normal (line-height 1.5, gap 8px, padding 10px)
+    // compactness 100 = ultra-compact (line-height 1.1, gap -4px, padding 2px)
     const compactness = custom.compactness ?? 50
-    const lineHeight = 2.0 - (compactness / 100) * 0.8 // 2.0 to 1.2
-    const messageGap = Math.max(0, 16 - (compactness / 100) * 16) // 16 to 0
+    const lineHeight = 2.0 - (compactness / 100) * 0.9 // 2.0 to 1.1
+    const messageGap = 20 - (compactness / 100) * 24 // 20 to -4
+    const messagePadding = 16 - (compactness / 100) * 14 // 16 to 2
 
     root.style.setProperty('--custom-line-height', lineHeight.toFixed(2))
     root.style.setProperty('--custom-message-gap', `${Math.round(messageGap)}px`)
-    root.style.setProperty('--custom-message-padding', `${custom.messagePadding || 12}px`)
+    root.style.setProperty('--custom-message-padding', `${Math.round(messagePadding)}px`)
     root.style.setProperty('--custom-border-radius', `${custom.borderRadius || 4}px`)
     root.style.setProperty('--custom-code-font-size', `${custom.codeBlockFontSize || 13}px`)
     root.setAttribute('data-custom-base', custom.baseStyle || 'default')
@@ -296,14 +298,12 @@ export default function Settings({ isOpen, onClose }) {
                     <label className={styles.label}>
                       Font Size: {settings.customAppearance?.fontSize || 14}px
                     </label>
-                    <input
-                      type="range"
-                      min="10"
-                      max="20"
-                      step="1"
+                    <Slider
+                      min={10}
+                      max={20}
+                      step={1}
                       value={settings.customAppearance?.fontSize || 14}
-                      onChange={(e) => handleCustomAppearanceChange('fontSize', parseInt(e.target.value))}
-                      className={styles.slider}
+                      onChange={(val) => handleCustomAppearanceChange('fontSize', val)}
                     />
                   </div>
 
@@ -311,45 +311,26 @@ export default function Settings({ isOpen, onClose }) {
                     <label className={styles.label}>
                       Compactness: {settings.customAppearance?.compactness ?? 50}%
                     </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      step="5"
+                    <Slider
+                      min={0}
+                      max={100}
+                      step={5}
                       value={settings.customAppearance?.compactness ?? 50}
-                      onChange={(e) => handleCustomAppearanceChange('compactness', parseInt(e.target.value))}
-                      className={styles.slider}
+                      onChange={(val) => handleCustomAppearanceChange('compactness', val)}
                     />
-                    <span className={styles.hint}>Controls line height and message spacing together</span>
-                  </div>
-
-                  <div className={styles.field}>
-                    <label className={styles.label}>
-                      Message Padding: {settings.customAppearance?.messagePadding || 12}px
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="24"
-                      step="2"
-                      value={settings.customAppearance?.messagePadding || 12}
-                      onChange={(e) => handleCustomAppearanceChange('messagePadding', parseInt(e.target.value))}
-                      className={styles.slider}
-                    />
+                    <span className={styles.hint}>Controls line height, spacing, and padding</span>
                   </div>
 
                   <div className={styles.field}>
                     <label className={styles.label}>
                       Border Radius: {settings.customAppearance?.borderRadius || 4}px
                     </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="16"
-                      step="1"
+                    <Slider
+                      min={0}
+                      max={16}
+                      step={1}
                       value={settings.customAppearance?.borderRadius || 4}
-                      onChange={(e) => handleCustomAppearanceChange('borderRadius', parseInt(e.target.value))}
-                      className={styles.slider}
+                      onChange={(val) => handleCustomAppearanceChange('borderRadius', val)}
                     />
                   </div>
 
@@ -357,14 +338,12 @@ export default function Settings({ isOpen, onClose }) {
                     <label className={styles.label}>
                       Code Block Font Size: {settings.customAppearance?.codeBlockFontSize || 13}px
                     </label>
-                    <input
-                      type="range"
-                      min="10"
-                      max="18"
-                      step="1"
+                    <Slider
+                      min={10}
+                      max={18}
+                      step={1}
                       value={settings.customAppearance?.codeBlockFontSize || 13}
-                      onChange={(e) => handleCustomAppearanceChange('codeBlockFontSize', parseInt(e.target.value))}
-                      className={styles.slider}
+                      onChange={(val) => handleCustomAppearanceChange('codeBlockFontSize', val)}
                     />
                   </div>
 
@@ -440,14 +419,12 @@ export default function Settings({ isOpen, onClose }) {
                 <label className={styles.label}>
                   Temperature: {settings.defaultTemperature}
                 </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.1"
+                <Slider
+                  min={0}
+                  max={1}
+                  step={0.1}
                   value={settings.defaultTemperature}
-                  onChange={(e) => handleSettingChange('defaultTemperature', parseFloat(e.target.value))}
-                  className={styles.slider}
+                  onChange={(val) => handleSettingChange('defaultTemperature', val)}
                 />
               </div>
 
@@ -455,14 +432,12 @@ export default function Settings({ isOpen, onClose }) {
                 <label className={styles.label}>
                   Max Tokens: {settings.defaultMaxTokens.toLocaleString()} / {getModelMaxTokens(settings.defaultProvider, settings.defaultModel).toLocaleString()}
                 </label>
-                <input
-                  type="range"
-                  min="256"
+                <Slider
+                  min={256}
                   max={getModelMaxTokens(settings.defaultProvider, settings.defaultModel)}
-                  step="256"
+                  step={256}
                   value={Math.min(settings.defaultMaxTokens, getModelMaxTokens(settings.defaultProvider, settings.defaultModel))}
-                  onChange={(e) => handleSettingChange('defaultMaxTokens', parseInt(e.target.value))}
-                  className={styles.slider}
+                  onChange={(val) => handleSettingChange('defaultMaxTokens', val)}
                 />
               </div>
 

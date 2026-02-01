@@ -14,7 +14,7 @@
 
 .inputWrapper {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 0.5rem;
   flex: 1;
   background: var(--bg-secondary);
