@@ -21,6 +21,8 @@ import {
   incrementMessageCount,
   isPromoHidden,
   getCustomEndpoints,
+  getLastUsedModel,
+  setLastUsedModel,
 } from '@/lib/storage'
 import PromoMessage from './components/PromoMessage'
 import { getProvider, modelSupportsImages, getDefaultModel, PROVIDERS } from '@/lib/providers'
@@ -46,6 +48,8 @@ export default function Home() {
   const [systemPrompt, setSystemPrompt] = useState('You are a helpful assistant.')
   const [temperature, setTemperature] = useState(0.7)
   const [thinkingEnabled, setThinkingEnabled] = useState(false)
+  const [editingSystemPrompt, setEditingSystemPrompt] = useState(false)
+  const [tempSystemPrompt, setTempSystemPrompt] = useState('')
 
   // Refs
   const messagesEndRef = useRef(null)
@@ -55,8 +59,17 @@ export default function Home() {
   useEffect(() => {
     // Load settings
     const settings = getSettings()
-    setProvider(settings.defaultProvider)
-    setModel(settings.defaultModel)
+
+    // Check for last used model first, then fall back to defaults
+    const lastModel = getLastUsedModel()
+    if (lastModel) {
+      setProvider(lastModel.provider)
+      setModel(lastModel.model)
+    } else {
+      setProvider(settings.defaultProvider)
+      setModel(settings.defaultModel)
+    }
+
     setSystemPrompt(settings.defaultSystemPrompt)
     setTemperature(settings.defaultTemperature)
 
@@ -100,6 +113,13 @@ export default function Home() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Save last used model when it changes
+  useEffect(() => {
+    if (initialized && provider && model) {
+      setLastUsedModel(provider, model)
+    }
+  }, [provider, model, initialized])
+
   // Load chat when currentChatId changes
   useEffect(() => {
     if (currentChatId) {
@@ -122,10 +142,16 @@ export default function Home() {
     setMessages([])
     setError(null)
 
-    // Reset to defaults
+    // Use last used model if available, otherwise defaults
     const settings = getSettings()
-    setProvider(settings.defaultProvider)
-    setModel(settings.defaultModel)
+    const lastModel = getLastUsedModel()
+    if (lastModel) {
+      setProvider(lastModel.provider)
+      setModel(lastModel.model)
+    } else {
+      setProvider(settings.defaultProvider)
+      setModel(settings.defaultModel)
+    }
     setSystemPrompt(settings.defaultSystemPrompt)
     setTemperature(settings.defaultTemperature)
   }, [])
@@ -457,6 +483,54 @@ export default function Home() {
               <img src="/icon-light.png" alt="betterclauwd" className={styles.logoLight} />
               <img src="/icon-dark.png" alt="betterclauwd" className={styles.logoDark} />
               <h2>betterclauwd</h2>
+
+              {/* System Prompt Display */}
+              <div className={styles.systemPromptContainer}>
+                {editingSystemPrompt ? (
+                  <div className={styles.systemPromptEdit}>
+                    <textarea
+                      value={tempSystemPrompt}
+                      onChange={(e) => setTempSystemPrompt(e.target.value)}
+                      className={styles.systemPromptTextarea}
+                      rows={3}
+                      autoFocus
+                    />
+                    <div className={styles.systemPromptActions}>
+                      <button
+                        onClick={() => {
+                          setSystemPrompt(tempSystemPrompt)
+                          setEditingSystemPrompt(false)
+                        }}
+                        className={styles.systemPromptSave}
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setEditingSystemPrompt(false)}
+                        className={styles.systemPromptCancel}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={styles.systemPromptDisplay}
+                    onClick={() => {
+                      setTempSystemPrompt(systemPrompt)
+                      setEditingSystemPrompt(true)
+                    }}
+                  >
+                    <span className={styles.systemPromptText}>{systemPrompt}</span>
+                    <button className={styles.systemPromptEditBtn} title="Edit system prompt">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             messages.map((msg, idx) => (

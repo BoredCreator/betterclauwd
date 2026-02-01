@@ -25,7 +25,8 @@
 }
 
 .inputWrapper:focus-within {
-  border-color: var(--accent);
+  border-color: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.2);
 }
 
 .textarea {
@@ -80,8 +81,9 @@
 }
 
 .attachButton:hover {
-  border-color: var(--accent);
-  color: var(--text);
+  border-color: #22c55e;
+  color: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
 }
 
 .sendButton {
@@ -99,8 +101,10 @@
 }
 
 .sendButton:hover:not(:disabled) {
-  border-color: var(--accent);
+  border-color: #22c55e;
   background: var(--bg-secondary);
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+  color: #22c55e;
 }
 
 .sendButton:disabled {

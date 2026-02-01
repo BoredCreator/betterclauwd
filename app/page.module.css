@@ -124,8 +124,9 @@
 }
 
 .keysButton:hover {
-  border-color: var(--accent);
-  color: var(--text);
+  border-color: #22c55e;
+  color: #22c55e;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
 }
 
 .messages {
@@ -158,9 +159,10 @@
 
 .stopOverlay:hover {
   opacity: 1;
-  border-color: var(--text);
-  color: var(--text);
+  border-color: #22c55e;
+  color: #22c55e;
   background: var(--bg-tertiary);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
 }
 
 .empty {
@@ -217,6 +219,120 @@
   gap: 0.5rem;
   font-size: 0.8rem;
   color: var(--accent);
+}
+
+/* System Prompt Display */
+.systemPromptContainer {
+  margin-top: 1.5rem;
+  max-width: 500px;
+  width: 100%;
+}
+
+.systemPromptDisplay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.systemPromptDisplay:hover {
+  border-color: #22c55e;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.3);
+}
+
+.systemPromptText {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.systemPromptEditBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.systemPromptDisplay:hover .systemPromptEditBtn {
+  color: #22c55e;
+  border-color: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+}
+
+.systemPromptEdit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.systemPromptTextarea {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid #22c55e;
+  border-radius: 8px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  resize: vertical;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.3);
+}
+
+.systemPromptTextarea:focus {
+  outline: none;
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.5);
+}
+
+.systemPromptActions {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.systemPromptSave,
+.systemPromptCancel {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.systemPromptSave {
+  background: #22c55e;
+  border: 1px solid #22c55e;
+  color: #000;
+}
+
+.systemPromptSave:hover {
+  background: #16a34a;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
+}
+
+.systemPromptCancel {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.systemPromptCancel:hover {
+  border-color: var(--text);
+  color: var(--text);
 }
 
 .error {

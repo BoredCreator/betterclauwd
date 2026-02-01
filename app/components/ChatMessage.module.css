@@ -109,8 +109,9 @@
 }
 
 .actionButton:hover {
-  border-color: var(--accent);
-  color: var(--text);
+  border-color: #22c55e;
+  color: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
 }
 
 /* Edit mode styles */
