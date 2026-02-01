@@ -74,9 +74,10 @@ export default function Home() {
     setSystemPrompt(settings.defaultSystemPrompt)
     setTemperature(settings.defaultTemperature)
 
-    // Apply theme and appearance
+    // Apply theme, appearance, and font
     document.documentElement.setAttribute('data-theme', settings.theme)
     document.documentElement.setAttribute('data-appearance', settings.appearance || 'default')
+    document.documentElement.setAttribute('data-font', settings.font || 'inter')
 
     // Apply custom appearance settings if in custom mode
     if (settings.appearance === 'custom' && settings.customAppearance) {

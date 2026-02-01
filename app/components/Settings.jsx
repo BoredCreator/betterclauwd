@@ -79,6 +79,11 @@ export default function Settings({ isOpen, onClose }) {
     document.documentElement.setAttribute('data-theme', theme)
   }
 
+  const handleFontChange = (font) => {
+    handleSettingChange('font', font)
+    document.documentElement.setAttribute('data-font', font)
+  }
+
   const handleAppearanceChange = (appearance) => {
     handleSettingChange('appearance', appearance)
     document.documentElement.setAttribute('data-appearance', appearance)
@@ -273,6 +278,24 @@ export default function Settings({ isOpen, onClose }) {
                   </button>
                 </div>
               </div>
+
+              {settings.appearance !== 'terminal' && (
+                <div className={styles.field}>
+                  <label className={styles.label}>Font</label>
+                  <select
+                    value={settings.font || 'inter'}
+                    onChange={(e) => handleFontChange(e.target.value)}
+                    className={styles.select}
+                  >
+                    <option value="inter">Inter (Modern)</option>
+                    <option value="system">System Default</option>
+                    <option value="source-sans">Source Sans (Clean)</option>
+                    <option value="merriweather">Merriweather (Serif)</option>
+                    <option value="mono">Monospace</option>
+                  </select>
+                  <span className={styles.hint}>Terminal mode always uses monospace</span>
+                </div>
+              )}
 
               {settings.appearance === 'custom' && (
                 <div className={styles.customAppearance}>
