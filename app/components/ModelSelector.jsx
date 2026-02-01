@@ -3,12 +3,13 @@
 import { useState, useRef, useEffect } from 'react'
 import styles from './ModelSelector.module.css'
 import { PROVIDERS, getProviderConfig } from '@/lib/providers'
-import { getApiKeys } from '@/lib/storage'
+import { getApiKeys, getCustomProviderConfig } from '@/lib/storage'
 
 export default function ModelSelector({ provider, model, onProviderChange, onModelChange }) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef(null)
   const apiKeys = getApiKeys()
+  const customConfig = getCustomProviderConfig()
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -21,10 +22,33 @@ export default function ModelSelector({ provider, model, onProviderChange, onMod
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const currentProvider = getProviderConfig(provider)
+  // For custom provider, use custom models from config
+  const getProviderModels = (providerId) => {
+    if (providerId === 'custom' && customConfig.models?.length > 0) {
+      return customConfig.models
+    }
+    return PROVIDERS[providerId]?.models || []
+  }
+
+  const currentProvider = provider === 'custom'
+    ? { ...PROVIDERS.custom, models: customConfig.models || PROVIDERS.custom.models }
+    : getProviderConfig(provider)
   const currentModel = currentProvider?.models.find(m => m.id === model)
 
-  const availableProviders = Object.values(PROVIDERS).filter(p => apiKeys[p.id])
+  // Get available providers (ones with API keys + custom if enabled)
+  const availableProviders = Object.values(PROVIDERS)
+    .filter(p => {
+      if (p.id === 'custom') {
+        return customConfig.enabled && customConfig.endpoint && apiKeys.custom
+      }
+      return apiKeys[p.id]
+    })
+    .map(p => {
+      if (p.id === 'custom') {
+        return { ...p, models: customConfig.models || p.models }
+      }
+      return p
+    })
 
   const handleSelectModel = (providerId, modelId) => {
     if (providerId !== provider) {

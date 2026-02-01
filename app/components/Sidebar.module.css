@@ -271,16 +271,16 @@
 
 /* Terminal Appearance */
 :global([data-appearance="terminal"]) .sidebar {
-  background: #0a0a0a;
-  border-right: 1px solid #1a1a1a;
+  background: var(--terminal-bg-secondary, #0a0a0a);
+  border-right: 1px solid var(--terminal-border, #1a1a1a);
 }
 
 :global([data-appearance="terminal"]) .header {
-  border-bottom: 1px solid #1a1a1a;
+  border-bottom: 1px solid var(--terminal-border, #1a1a1a);
 }
 
 :global([data-appearance="terminal"]) .title {
-  color: #22c55e;
+  color: var(--terminal-green, #22c55e);
 }
 
 :global([data-appearance="terminal"]) .title::before {
@@ -289,24 +289,24 @@
 
 :global([data-appearance="terminal"]) .newChatButton {
   background: transparent;
-  border: 1px dashed #333;
+  border: 1px dashed var(--terminal-border, #333);
   border-radius: 0;
 }
 
 :global([data-appearance="terminal"]) .newChatButton:hover {
-  border-color: #22c55e;
-  color: #22c55e;
+  border-color: var(--terminal-green, #22c55e);
+  color: var(--terminal-green, #22c55e);
   background: transparent;
 }
 
 :global([data-appearance="terminal"]) .searchInput {
-  background: #0d0d0d;
-  border: 1px solid #1a1a1a;
+  background: var(--terminal-bg, #0d0d0d);
+  border: 1px solid var(--terminal-border, #1a1a1a);
   border-radius: 0;
 }
 
 :global([data-appearance="terminal"]) .searchInput:focus {
-  border-color: #22c55e;
+  border-color: var(--terminal-green, #22c55e);
 }
 
 :global([data-appearance="terminal"]) .chatItem {
@@ -314,29 +314,29 @@
 }
 
 :global([data-appearance="terminal"]) .chatItem:hover {
-  background: #111;
+  background: var(--bg-tertiary, #111);
 }
 
 :global([data-appearance="terminal"]) .chatItem.active {
-  background: #111;
-  border-left: 2px solid #22c55e;
+  background: var(--bg-tertiary, #111);
+  border-left: 2px solid var(--terminal-green, #22c55e);
 }
 
 :global([data-appearance="terminal"]) .chatTitle::before {
   content: "# ";
-  color: #22c55e;
+  color: var(--terminal-green, #22c55e);
 }
 
 :global([data-appearance="terminal"]) .footer {
-  border-top: 1px solid #1a1a1a;
+  border-top: 1px solid var(--terminal-border, #1a1a1a);
 }
 
 :global([data-appearance="terminal"]) .settingsButton {
-  border: 1px dashed #333;
+  border: 1px dashed var(--terminal-border, #333);
   border-radius: 0;
 }
 
 :global([data-appearance="terminal"]) .settingsButton:hover {
-  border-color: #22c55e;
-  color: #22c55e;
+  border-color: var(--terminal-green, #22c55e);
+  color: var(--terminal-green, #22c55e);
 }

@@ -23,6 +23,7 @@ import {
   getCustomEndpoints,
   getLastUsedModel,
   setLastUsedModel,
+  getCustomProviderConfig,
 } from '@/lib/storage'
 import PromoMessage from './components/PromoMessage'
 import { getProvider, modelSupportsImages, getDefaultModel, PROVIDERS } from '@/lib/providers'
@@ -82,8 +83,14 @@ export default function Home() {
       const custom = settings.customAppearance
       const root = document.documentElement
       root.style.setProperty('--custom-font-size', `${custom.fontSize || 14}px`)
-      root.style.setProperty('--custom-line-height', custom.lineHeight || 1.6)
-      root.style.setProperty('--custom-message-gap', `${custom.messageGap ?? 8}px`)
+
+      // Calculate line-height and message-gap from compactness (0-100)
+      const compactness = custom.compactness ?? 50
+      const lineHeight = 2.0 - (compactness / 100) * 0.8 // 2.0 to 1.2
+      const messageGap = Math.max(0, 16 - (compactness / 100) * 16) // 16 to 0
+
+      root.style.setProperty('--custom-line-height', lineHeight.toFixed(2))
+      root.style.setProperty('--custom-message-gap', `${Math.round(messageGap)}px`)
       root.style.setProperty('--custom-message-padding', `${custom.messagePadding || 12}px`)
       root.style.setProperty('--custom-border-radius', `${custom.borderRadius || 4}px`)
       root.style.setProperty('--custom-code-font-size', `${custom.codeBlockFontSize || 13}px`)
@@ -237,7 +244,12 @@ export default function Home() {
 
       // Get provider and send message
       const customEndpoints = getCustomEndpoints()
-      const providerInstance = getProvider(provider, customEndpoints[provider])
+      const customProviderConfig = getCustomProviderConfig()
+      // For custom provider, use the endpoint from custom config
+      const endpointToUse = provider === 'custom'
+        ? customProviderConfig.endpoint
+        : customEndpoints[provider]
+      const providerInstance = getProvider(provider, endpointToUse)
       const stream = providerInstance.sendMessage(
         apiKey,
         updatedMessages.map(m => ({

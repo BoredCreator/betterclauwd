@@ -408,16 +408,16 @@
 
 /* Terminal Appearance */
 :global([data-appearance="terminal"]) .container {
-  background: #0d0d0d;
+  background: var(--terminal-bg, #0d0d0d);
 }
 
 :global([data-appearance="terminal"]) .main {
-  background: #0d0d0d;
+  background: var(--terminal-bg, #0d0d0d);
 }
 
 :global([data-appearance="terminal"]) .header {
-  background: #0d0d0d;
-  border-bottom: 1px solid #1a1a1a;
+  background: var(--terminal-bg, #0d0d0d);
+  border-bottom: 1px solid var(--terminal-border, #1a1a1a);
 }
 
 :global([data-appearance="terminal"]) .messages {
@@ -425,17 +425,17 @@
 }
 
 :global([data-appearance="terminal"]) .empty h2 {
-  color: #22c55e;
+  color: var(--terminal-green, #22c55e);
 }
 
 :global([data-appearance="terminal"]) .empty h2::before {
   content: "> ";
-  color: #22c55e;
+  color: var(--terminal-green, #22c55e);
 }
 
 :global([data-appearance="terminal"]) .footer {
-  background: #0d0d0d;
-  border-top: 1px solid #1a1a1a;
+  background: var(--terminal-bg, #0d0d0d);
+  border-top: 1px solid var(--terminal-border, #1a1a1a);
 }
 
 /* Custom Appearance */
@@ -445,28 +445,28 @@
 
 /* Custom with terminal base */
 :global([data-appearance="custom"][data-custom-base="terminal"]) .container {
-  background: #0d0d0d;
+  background: var(--terminal-bg, #0d0d0d);
 }
 
 :global([data-appearance="custom"][data-custom-base="terminal"]) .main {
-  background: #0d0d0d;
+  background: var(--terminal-bg, #0d0d0d);
 }
 
 :global([data-appearance="custom"][data-custom-base="terminal"]) .header {
-  background: #0d0d0d;
-  border-bottom: 1px solid #1a1a1a;
+  background: var(--terminal-bg, #0d0d0d);
+  border-bottom: 1px solid var(--terminal-border, #1a1a1a);
 }
 
 :global([data-appearance="custom"][data-custom-base="terminal"]) .footer {
-  background: #0d0d0d;
-  border-top: 1px solid #1a1a1a;
+  background: var(--terminal-bg, #0d0d0d);
+  border-top: 1px solid var(--terminal-border, #1a1a1a);
 }
 
 :global([data-appearance="custom"][data-custom-base="terminal"]) .empty h2 {
-  color: #22c55e;
+  color: var(--terminal-green, #22c55e);
 }
 
 :global([data-appearance="custom"][data-custom-base="terminal"]) .empty h2::before {
   content: "> ";
-  color: #22c55e;
+  color: var(--terminal-green, #22c55e);
 }

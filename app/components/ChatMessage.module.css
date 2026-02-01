@@ -221,7 +221,7 @@
   border-radius: 0;
   padding: 0.5rem 0;
   margin-bottom: 0;
-  border-bottom: 1px dashed #1a1a1a;
+  border-bottom: 1px dashed var(--terminal-border, #1a1a1a);
 }
 
 :global([data-appearance="terminal"]) .user {
@@ -249,16 +249,16 @@
 
 :global([data-appearance="terminal"]) .user .role::before {
   content: "$ ";
-  color: #22c55e;
+  color: var(--terminal-green, #22c55e);
 }
 
 :global([data-appearance="terminal"]) .assistant .role {
-  color: #22c55e;
+  color: var(--terminal-green, #22c55e);
 }
 
 :global([data-appearance="terminal"]) .assistant .role::before {
   content: "> ";
-  color: #22c55e;
+  color: var(--terminal-green, #22c55e);
 }
 
 :global([data-appearance="terminal"]) .content {
@@ -272,13 +272,13 @@
 }
 
 :global([data-appearance="terminal"]) .actionButton {
-  border: 1px dashed #333;
+  border: 1px dashed var(--terminal-border, #333);
   background: transparent;
 }
 
 :global([data-appearance="terminal"]) .actionButton:hover {
-  border-color: #22c55e;
-  color: #22c55e;
+  border-color: var(--terminal-green, #22c55e);
+  color: var(--terminal-green, #22c55e);
 }
 
 /* Custom Appearance */
@@ -300,7 +300,7 @@
 :global([data-appearance="custom"][data-custom-base="terminal"]) .message {
   background: transparent;
   border: none;
-  border-bottom: 1px dashed #1a1a1a;
+  border-bottom: 1px dashed var(--terminal-border, #1a1a1a);
 }
 
 :global([data-appearance="custom"][data-custom-base="terminal"]) .user {
@@ -317,16 +317,16 @@
 
 :global([data-appearance="custom"][data-custom-base="terminal"]) .user .role::before {
   content: "$ ";
-  color: #22c55e;
+  color: var(--terminal-green, #22c55e);
 }
 
 :global([data-appearance="custom"][data-custom-base="terminal"]) .assistant .role::before {
   content: "> ";
-  color: #22c55e;
+  color: var(--terminal-green, #22c55e);
 }
 
 :global([data-appearance="custom"][data-custom-base="terminal"]) .assistant .role {
-  color: #22c55e;
+  color: var(--terminal-green, #22c55e);
 }
 
 :global([data-appearance="custom"][data-custom-base="terminal"]) .user .role {

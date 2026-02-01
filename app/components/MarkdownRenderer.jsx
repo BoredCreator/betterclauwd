@@ -22,9 +22,10 @@ function parseMarkdown(text) {
   let normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
 
   // Extract code blocks first to protect them from other parsing
+  // Use %%CODEBLOCK%% format to avoid markdown bold/italic patterns matching
   const codeBlocks = []
   normalized = normalized.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
-    const placeholder = `__CODE_BLOCK_${codeBlocks.length}__`
+    const placeholder = `%%CODEBLOCK${codeBlocks.length}%%`
 
     // Special handling for thinking blocks
     if (lang === 'thinking') {
@@ -40,7 +41,7 @@ function parseMarkdown(text) {
   // Extract inline code
   const inlineCodes = []
   normalized = normalized.replace(/`([^`]+)`/g, (match, code) => {
-    const placeholder = `__INLINE_CODE_${inlineCodes.length}__`
+    const placeholder = `%%INLINECODE${inlineCodes.length}%%`
     inlineCodes.push(`<code>${escapeHtml(code)}</code>`)
     return placeholder
   })
@@ -101,12 +102,12 @@ function parseMarkdown(text) {
 
   // Restore code blocks
   codeBlocks.forEach((block, i) => {
-    html = html.replace(`__CODE_BLOCK_${i}__`, block)
+    html = html.replace(`%%CODEBLOCK${i}%%`, block)
   })
 
   // Restore inline code
   inlineCodes.forEach((code, i) => {
-    html = html.replace(`__INLINE_CODE_${i}__`, code)
+    html = html.replace(`%%INLINECODE${i}%%`, code)
   })
 
   return html

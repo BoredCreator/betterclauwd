@@ -415,10 +415,22 @@ button:hover,
 :root[data-appearance="terminal"] {
   --terminal-prompt: ">";
   --terminal-green: #22c55e;
+  --terminal-bg: #0d0d0d;
+  --terminal-bg-secondary: #0a0a0a;
+  --terminal-border: #1a1a1a;
 }
 
 :root[data-appearance="terminal"] body {
   font-size: 13px;
+  background: var(--terminal-bg);
+}
+
+/* Terminal Light Mode */
+:root[data-appearance="terminal"][data-theme="light"] {
+  --terminal-bg: #f8f8f8;
+  --terminal-bg-secondary: #f0f0f0;
+  --terminal-border: #d0d0d0;
+  --terminal-green: #16a34a;
 }
 
 /* Compact Appearance */
@@ -455,10 +467,21 @@ button:hover,
 :root[data-appearance="custom"][data-custom-base="terminal"] {
   --terminal-prompt: ">";
   --terminal-green: #22c55e;
+  --terminal-bg: #0d0d0d;
+  --terminal-bg-secondary: #0a0a0a;
+  --terminal-border: #1a1a1a;
 }
 
 :root[data-appearance="custom"][data-custom-base="terminal"] body {
-  background: #0d0d0d;
+  background: var(--terminal-bg);
+}
+
+/* Custom terminal base in light mode */
+:root[data-appearance="custom"][data-custom-base="terminal"][data-theme="light"] {
+  --terminal-bg: #f8f8f8;
+  --terminal-bg-secondary: #f0f0f0;
+  --terminal-border: #d0d0d0;
+  --terminal-green: #16a34a;
 }
 
 /* Hide timestamps when disabled */

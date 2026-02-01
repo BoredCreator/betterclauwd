@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import styles from './Settings.module.css'
 import { PROVIDERS, getModelMaxTokens, DEFAULT_ENDPOINTS } from '@/lib/providers'
-import { getApiKeys, setApiKey, getSettings, updateSettings, exportAllData, importData, clearAllData, getTokenUsage, resetTokenUsage, getCustomEndpoints, setCustomEndpoint } from '@/lib/storage'
+import { getApiKeys, setApiKey, getSettings, updateSettings, exportAllData, importData, clearAllData, getTokenUsage, resetTokenUsage, getCustomEndpoints, setCustomEndpoint, getCustomProviderConfig, updateCustomProviderConfig } from '@/lib/storage'
 
 export default function Settings({ isOpen, onClose }) {
   const [activeTab, setActiveTab] = useState('api-keys')
@@ -12,6 +12,9 @@ export default function Settings({ isOpen, onClose }) {
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [tokenUsage, setTokenUsage] = useState(getTokenUsage())
   const [customEndpoints, setCustomEndpoints] = useState(getCustomEndpoints())
+  const [customProviderConfig, setCustomProviderConfig] = useState(getCustomProviderConfig())
+  const [newModelName, setNewModelName] = useState('')
+  const [newModelId, setNewModelId] = useState('')
 
   if (!isOpen) return null
 
@@ -94,8 +97,17 @@ export default function Settings({ isOpen, onClose }) {
   const applyCustomAppearance = (custom) => {
     const root = document.documentElement
     root.style.setProperty('--custom-font-size', `${custom.fontSize || 14}px`)
-    root.style.setProperty('--custom-line-height', custom.lineHeight || 1.6)
-    root.style.setProperty('--custom-message-gap', `${custom.messageGap ?? 8}px`)
+
+    // Calculate line-height and message-gap from compactness (0-100)
+    // compactness 0 = spacious (line-height 2.0, gap 16px)
+    // compactness 50 = normal (line-height 1.6, gap 8px)
+    // compactness 100 = compact (line-height 1.2, gap 0px)
+    const compactness = custom.compactness ?? 50
+    const lineHeight = 2.0 - (compactness / 100) * 0.8 // 2.0 to 1.2
+    const messageGap = Math.max(0, 16 - (compactness / 100) * 16) // 16 to 0
+
+    root.style.setProperty('--custom-line-height', lineHeight.toFixed(2))
+    root.style.setProperty('--custom-message-gap', `${Math.round(messageGap)}px`)
     root.style.setProperty('--custom-message-padding', `${custom.messagePadding || 12}px`)
     root.style.setProperty('--custom-border-radius', `${custom.borderRadius || 4}px`)
     root.style.setProperty('--custom-code-font-size', `${custom.codeBlockFontSize || 13}px`)
@@ -109,6 +121,32 @@ export default function Settings({ isOpen, onClose }) {
     const newEndpoints = { ...customEndpoints, [providerId]: value }
     setCustomEndpoints(newEndpoints)
     setCustomEndpoint(providerId, value)
+  }
+
+  const handleCustomProviderChange = (key, value) => {
+    const newConfig = updateCustomProviderConfig({ [key]: value })
+    setCustomProviderConfig(newConfig)
+  }
+
+  const handleAddCustomModel = () => {
+    if (!newModelName.trim() || !newModelId.trim()) return
+    const newModel = {
+      id: newModelId.trim(),
+      name: newModelName.trim(),
+      supportsImages: true,
+      maxTokens: 32000,
+    }
+    const newModels = [...(customProviderConfig.models || []), newModel]
+    const newConfig = updateCustomProviderConfig({ models: newModels })
+    setCustomProviderConfig(newConfig)
+    setNewModelName('')
+    setNewModelId('')
+  }
+
+  const handleRemoveCustomModel = (modelId) => {
+    const newModels = customProviderConfig.models.filter(m => m.id !== modelId)
+    const newConfig = updateCustomProviderConfig({ models: newModels })
+    setCustomProviderConfig(newConfig)
   }
 
   const handleResetTokenUsage = () => {
@@ -271,32 +309,18 @@ export default function Settings({ isOpen, onClose }) {
 
                   <div className={styles.field}>
                     <label className={styles.label}>
-                      Line Height: {settings.customAppearance?.lineHeight || 1.6}
+                      Compactness: {settings.customAppearance?.compactness ?? 50}%
                     </label>
                     <input
                       type="range"
-                      min="1"
-                      max="2.5"
-                      step="0.1"
-                      value={settings.customAppearance?.lineHeight || 1.6}
-                      onChange={(e) => handleCustomAppearanceChange('lineHeight', parseFloat(e.target.value))}
+                      min="0"
+                      max="100"
+                      step="5"
+                      value={settings.customAppearance?.compactness ?? 50}
+                      onChange={(e) => handleCustomAppearanceChange('compactness', parseInt(e.target.value))}
                       className={styles.slider}
                     />
-                  </div>
-
-                  <div className={styles.field}>
-                    <label className={styles.label}>
-                      Message Spacing: {settings.customAppearance?.messageGap ?? 8}px
-                    </label>
-                    <input
-                      type="range"
-                      min="-10"
-                      max="24"
-                      step="1"
-                      value={settings.customAppearance?.messageGap ?? 8}
-                      onChange={(e) => handleCustomAppearanceChange('messageGap', parseInt(e.target.value))}
-                      className={styles.slider}
-                    />
+                    <span className={styles.hint}>Controls line height and message spacing together</span>
                   </div>
 
                   <div className={styles.field}>
@@ -503,10 +527,98 @@ export default function Settings({ isOpen, onClose }) {
 
           {activeTab === 'advanced' && (
             <div className={styles.section}>
+              {/* Custom Endpoint Section */}
+              <div className={styles.customEndpointSection}>
+                <h3 className={styles.sectionTitle}>Custom Endpoint</h3>
+                <p className={styles.sectionDesc}>
+                  Connect to any OpenAI-compatible API (Ollama, LM Studio, vLLM, etc.)
+                </p>
+
+                <div className={styles.field}>
+                  <label className={styles.toggleLabel}>
+                    <input
+                      type="checkbox"
+                      checked={customProviderConfig.enabled || false}
+                      onChange={(e) => handleCustomProviderChange('enabled', e.target.checked)}
+                      className={styles.checkbox}
+                    />
+                    <span className={styles.toggleText}>Enable custom endpoint</span>
+                  </label>
+                </div>
+
+                {customProviderConfig.enabled && (
+                  <>
+                    <div className={styles.field}>
+                      <label className={styles.label}>Endpoint URL</label>
+                      <input
+                        type="text"
+                        value={customProviderConfig.endpoint || ''}
+                        onChange={(e) => handleCustomProviderChange('endpoint', e.target.value)}
+                        placeholder="http://localhost:11434/v1"
+                        className={styles.input}
+                      />
+                      <span className={styles.hint}>
+                        Full URL to the OpenAI-compatible API (e.g., http://localhost:11434/v1 for Ollama)
+                      </span>
+                    </div>
+
+                    <div className={styles.field}>
+                      <label className={styles.label}>Custom Models</label>
+                      <div className={styles.modelList}>
+                        {customProviderConfig.models?.map(model => (
+                          <div key={model.id} className={styles.modelItem}>
+                            <span className={styles.modelName}>{model.name}</span>
+                            <span className={styles.modelId}>{model.id}</span>
+                            <button
+                              onClick={() => handleRemoveCustomModel(model.id)}
+                              className={styles.removeModelBtn}
+                              title="Remove model"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className={styles.addModelForm}>
+                      <input
+                        type="text"
+                        value={newModelName}
+                        onChange={(e) => setNewModelName(e.target.value)}
+                        placeholder="Model name (display)"
+                        className={styles.input}
+                      />
+                      <input
+                        type="text"
+                        value={newModelId}
+                        onChange={(e) => setNewModelId(e.target.value)}
+                        placeholder="Model ID (API)"
+                        className={styles.input}
+                      />
+                      <button
+                        onClick={handleAddCustomModel}
+                        className={styles.addModelBtn}
+                        disabled={!newModelName.trim() || !newModelId.trim()}
+                      >
+                        Add Model
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <hr className={styles.divider} />
+
+              {/* Provider Endpoints Section */}
+              <h3 className={styles.sectionTitle}>Provider Endpoints</h3>
               <p className={styles.sectionDesc}>
-                Custom API endpoints for each provider. Leave blank to use defaults.
+                Override default API endpoints for each provider. Leave blank to use defaults.
               </p>
-              {Object.values(PROVIDERS).map(provider => (
+              {Object.values(PROVIDERS).filter(p => p.id !== 'custom').map(provider => (
                 <div key={provider.id} className={styles.field}>
                   <label className={styles.label}>{provider.name} Endpoint</label>
                   <input

@@ -144,18 +144,18 @@
 
 /* Terminal Appearance */
 :global([data-appearance="terminal"]) .container {
-  background: #0d0d0d;
-  border-top: 1px solid #1a1a1a;
+  background: var(--terminal-bg, #0d0d0d);
+  border-top: 1px solid var(--terminal-border, #1a1a1a);
 }
 
 :global([data-appearance="terminal"]) .inputWrapper {
-  background: #0a0a0a;
-  border: 1px solid #1a1a1a;
+  background: var(--terminal-bg-secondary, #0a0a0a);
+  border: 1px solid var(--terminal-border, #1a1a1a);
   border-radius: 0;
 }
 
 :global([data-appearance="terminal"]) .inputWrapper:focus-within {
-  border-color: #22c55e;
+  border-color: var(--terminal-green, #22c55e);
 }
 
 :global([data-appearance="terminal"]) .textarea {
@@ -163,26 +163,26 @@
 }
 
 :global([data-appearance="terminal"]) .textarea::placeholder {
-  color: #444;
+  color: var(--text-secondary);
 }
 
 :global([data-appearance="terminal"]) .attachButton {
   border-radius: 0;
-  border: 1px dashed #333;
+  border: 1px dashed var(--terminal-border, #333);
 }
 
 :global([data-appearance="terminal"]) .attachButton:hover {
-  border-color: #22c55e;
-  color: #22c55e;
+  border-color: var(--terminal-green, #22c55e);
+  color: var(--terminal-green, #22c55e);
 }
 
 :global([data-appearance="terminal"]) .sendButton {
-  background: #111;
-  border: 1px dashed #333;
+  background: var(--bg-tertiary, #111);
+  border: 1px dashed var(--terminal-border, #333);
   border-radius: 0;
 }
 
 :global([data-appearance="terminal"]) .sendButton:hover:not(:disabled) {
-  border-color: #22c55e;
-  color: #22c55e;
+  border-color: var(--terminal-green, #22c55e);
+  color: var(--terminal-green, #22c55e);
 }
