@@ -45,7 +45,7 @@ export default function Home() {
 
   // Chat settings
   const [provider, setProvider] = useState('anthropic')
-  const [model, setModel] = useState('claude-sonnet-4-20250514')
+  const [model, setModel] = useState('claude-sonnet-4-5-20250514')
   const [systemPrompt, setSystemPrompt] = useState('You are a helpful assistant.')
   const [temperature, setTemperature] = useState(0.7)
   const [thinkingEnabled, setThinkingEnabled] = useState(false)
