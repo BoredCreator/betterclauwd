@@ -193,31 +193,41 @@ function renderLatex(latex) {
   // Handle \boxed{} with nested braces
   let pos = 0
   while ((pos = html.indexOf('\\boxed{', pos)) !== -1) {
-    const { content, endIndex } = extractBraced(html, pos + 7)
-    const rendered = `<span class="math-boxed">${content}</span>`
-    html = html.substring(0, pos) + rendered + html.substring(endIndex + 1)
-    pos += rendered.length
+    const { content, endIndex } = extractBraced(html, pos + 6) // start AT the '{'
+    if (endIndex < html.length) {
+      const rendered = `<span class="math-boxed">${content}</span>`
+      html = html.substring(0, pos) + rendered + html.substring(endIndex + 1)
+      pos += rendered.length
+    } else {
+      pos++
+    }
   }
 
   // Handle \dfrac and \frac with nested braces
   const handleFrac = (cmd) => {
     let pos = 0
     while ((pos = html.indexOf(cmd, pos)) !== -1) {
-      const startPos = pos + cmd.length
-      const first = extractBraced(html, startPos)
-      if (first.endIndex < html.length && html[first.endIndex + 1] === '{') {
-        const second = extractBraced(html, first.endIndex + 2)
-        const rendered = `<span class="math-frac"><span class="math-frac-num">${first.content}</span><span class="math-frac-den">${second.content}</span></span>`
-        html = html.substring(0, pos) + rendered + html.substring(second.endIndex + 1)
-        pos += rendered.length
-      } else {
-        pos++
+      const startPos = pos + cmd.length // points to the '{' after \frac
+      if (html[startPos] !== '{') { pos++; continue }
+      const first = extractBraced(html, startPos) // start AT the '{'
+      if (first.endIndex < html.length) {
+        const nextPos = first.endIndex + 1
+        if (nextPos < html.length && html[nextPos] === '{') {
+          const second = extractBraced(html, nextPos) // start AT the second '{'
+          if (second.endIndex < html.length) {
+            const rendered = `<span class="math-frac"><span class="math-frac-num">${first.content}</span><span class="math-frac-den">${second.content}</span></span>`
+            html = html.substring(0, pos) + rendered + html.substring(second.endIndex + 1)
+            pos += rendered.length
+            continue
+          }
+        }
       }
+      pos++
     }
   }
 
-  handleFrac('\\dfrac{')
-  handleFrac('\\frac{')
+  handleFrac('\\dfrac')
+  handleFrac('\\frac')
 
   // Square root: \sqrt{x} or \sqrt[n]{x} with nested braces
   pos = 0
@@ -235,7 +245,7 @@ function renderLatex(latex) {
     }
 
     if (html[startPos] === '{') {
-      const { content, endIndex } = extractBraced(html, startPos + 1)
+      const { content, endIndex } = extractBraced(html, startPos) // start AT the '{'
       let rendered
       if (index) {
         rendered = `<span class="math-root"><sup class="math-root-index">${index}</sup>√<span class="math-root-content">${content}</span></span>`
