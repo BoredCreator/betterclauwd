@@ -57,6 +57,35 @@ export default function Home() {
   const messagesEndRef = useRef(null)
   const abortControllerRef = useRef(null)
 
+  // Handle URL hash changes for chat routing
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash
+      if (hash.startsWith('#/chat/')) {
+        const chatId = hash.substring(7) // Remove '#/chat/'
+        const chat = getChatById(chatId)
+        if (chat) {
+          setCurrentChatId(chatId)
+        } else {
+          // Chat doesn't exist, redirect to home
+          window.location.hash = ''
+        }
+      } else if (hash === '' || hash === '#') {
+        // Home - clear current chat
+        if (currentChatId) {
+          setCurrentChatId(null)
+        }
+      }
+    }
+
+    // Handle initial load
+    handleHashChange()
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
   // Initialize on mount
   useEffect(() => {
     // Load settings
@@ -152,6 +181,15 @@ export default function Home() {
     }
   }, [currentChatId])
 
+  // Update URL when currentChatId changes
+  useEffect(() => {
+    if (currentChatId) {
+      window.location.hash = `#/chat/${currentChatId}`
+    } else if (window.location.hash.startsWith('#/chat/')) {
+      window.location.hash = ''
+    }
+  }, [currentChatId])
+
   // Create new chat - keep current system prompt
   const handleNewChat = useCallback(() => {
     setCurrentChatId(null)
@@ -169,6 +207,7 @@ export default function Home() {
 
   // Select chat
   const handleSelectChat = useCallback((chatId) => {
+    // URL will be updated by the useEffect watching currentChatId
     setCurrentChatId(chatId)
     setError(null)
   }, [])
