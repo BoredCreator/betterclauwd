@@ -40,6 +40,22 @@ function parseMarkdown(text) {
     return placeholder
   })
 
+  // Handle bare LaTeX commands outside of $ delimiters
+  // Detect lines/segments containing \frac, \dfrac, \sqrt, \boxed, \int, \sec, etc.
+  const latexCmdPattern = /\\(?:d?frac|sqrt|boxed|int|sin|cos|tan|sec|csc|cot|arcsin|arccos|arctan|log|ln|lim|sum|prod|infty|alpha|beta|gamma|delta|epsilon|theta|lambda|mu|pi|sigma|phi|psi|omega|times|cdot|pm|leq|geq|neq|approx|left|right)\b/
+  normalized = normalized.split('\n').map(line => {
+    // Skip lines that already have math placeholders or are code blocks
+    if (line.includes('%%MATHBLOCK') || line.includes('%%CODEBLOCK') || line.startsWith('```')) {
+      return line
+    }
+    // If line contains bare LaTeX commands, render them inline
+    if (latexCmdPattern.test(line)) {
+      // Render the LaTeX parts of the line
+      return renderLatex(line)
+    }
+    return line
+  }).join('\n')
+
   // Extract code blocks first to protect them from other parsing
   // Use %%CODEBLOCK%% format to avoid markdown bold/italic patterns matching
   const codeBlocks = []
@@ -271,10 +287,16 @@ function renderLatex(latex) {
   html = html.replace(/_\{([^}]+)\}/g, '<sub>$1</sub>')
   html = html.replace(/_(\w)/g, '<sub>$1</sub>')
 
-  // Common functions
+  // \text{} - render as plain text
+  html = html.replace(/\\text\{([^}]+)\}/g, '$1')
+
+  // Common trig/math functions
   html = html.replace(/\\sin\b/g, 'sin')
   html = html.replace(/\\cos\b/g, 'cos')
   html = html.replace(/\\tan\b/g, 'tan')
+  html = html.replace(/\\sec\b/g, 'sec')
+  html = html.replace(/\\csc\b/g, 'csc')
+  html = html.replace(/\\cot\b/g, 'cot')
   html = html.replace(/\\arcsin\b/g, 'arcsin')
   html = html.replace(/\\arccos\b/g, 'arccos')
   html = html.replace(/\\arctan\b/g, 'arctan')
@@ -312,6 +334,15 @@ function renderLatex(latex) {
   html = html.replace(/\\!/g, '')
   html = html.replace(/\\quad/g, ' ')
   html = html.replace(/\\qquad/g, '  ')
+  html = html.replace(/\\displaystyle/g, '')
+  html = html.replace(/\\mathrm\{([^}]+)\}/g, '$1')
+  html = html.replace(/\\mathbf\{([^}]+)\}/g, '<strong>$1</strong>')
+
+  // Clean up remaining lone braces that were part of LaTeX grouping
+  html = html.replace(/(?<![%\w])\{([^}]+)\}/g, '$1')
+
+  // Strip any remaining unknown backslash commands (e.g. \foo → foo)
+  html = html.replace(/\\([a-zA-Z]+)/g, '$1')
 
   return html
 }
