@@ -155,19 +155,83 @@ function renderLatex(latex) {
   // Simple LaTeX to HTML converter for common math notation
   let html = latex
 
-  // Handle \boxed{} - render as highlighted box
-  html = html.replace(/\\boxed\{([^}]+)\}/g, '<span class="math-boxed">$1</span>')
-
-  // Fractions: \frac{a}{b}
-  html = html.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '<span class="math-frac"><span class="math-frac-num">$1</span><span class="math-frac-den">$2</span></span>')
-
-  // Square root: \sqrt{x} or \sqrt[n]{x}
-  html = html.replace(/\\sqrt(?:\[([^\]]+)\])?\{([^}]+)\}/g, (match, index, content) => {
-    if (index) {
-      return `<span class="math-root"><sup class="math-root-index">${index}</sup>√<span class="math-root-content">${content}</span></span>`
+  // Helper function to extract content within matching braces
+  const extractBraced = (str, startIndex) => {
+    let depth = 0
+    let content = ''
+    for (let i = startIndex; i < str.length; i++) {
+      if (str[i] === '{') {
+        if (depth > 0) content += '{'
+        depth++
+      } else if (str[i] === '}') {
+        depth--
+        if (depth === 0) return { content, endIndex: i }
+        content += '}'
+      } else if (depth > 0) {
+        content += str[i]
+      }
     }
-    return `√<span class="math-root-content">${content}</span>`
-  })
+    return { content, endIndex: str.length }
+  }
+
+  // Handle \boxed{} with nested braces
+  let pos = 0
+  while ((pos = html.indexOf('\\boxed{', pos)) !== -1) {
+    const { content, endIndex } = extractBraced(html, pos + 7)
+    const rendered = `<span class="math-boxed">${content}</span>`
+    html = html.substring(0, pos) + rendered + html.substring(endIndex + 1)
+    pos += rendered.length
+  }
+
+  // Handle \dfrac and \frac with nested braces
+  const handleFrac = (cmd) => {
+    let pos = 0
+    while ((pos = html.indexOf(cmd, pos)) !== -1) {
+      const startPos = pos + cmd.length
+      const first = extractBraced(html, startPos)
+      if (first.endIndex < html.length && html[first.endIndex + 1] === '{') {
+        const second = extractBraced(html, first.endIndex + 2)
+        const rendered = `<span class="math-frac"><span class="math-frac-num">${first.content}</span><span class="math-frac-den">${second.content}</span></span>`
+        html = html.substring(0, pos) + rendered + html.substring(second.endIndex + 1)
+        pos += rendered.length
+      } else {
+        pos++
+      }
+    }
+  }
+
+  handleFrac('\\dfrac{')
+  handleFrac('\\frac{')
+
+  // Square root: \sqrt{x} or \sqrt[n]{x} with nested braces
+  pos = 0
+  while ((pos = html.indexOf('\\sqrt', pos)) !== -1) {
+    let startPos = pos + 5
+    let index = null
+
+    // Check for optional index [n]
+    if (html[startPos] === '[') {
+      const closeBracket = html.indexOf(']', startPos)
+      if (closeBracket !== -1) {
+        index = html.substring(startPos + 1, closeBracket)
+        startPos = closeBracket + 1
+      }
+    }
+
+    if (html[startPos] === '{') {
+      const { content, endIndex } = extractBraced(html, startPos + 1)
+      let rendered
+      if (index) {
+        rendered = `<span class="math-root"><sup class="math-root-index">${index}</sup>√<span class="math-root-content">${content}</span></span>`
+      } else {
+        rendered = `√<span class="math-root-content">${content}</span>`
+      }
+      html = html.substring(0, pos) + rendered + html.substring(endIndex + 1)
+      pos += rendered.length
+    } else {
+      pos++
+    }
+  }
 
   // Integrals: \int
   html = html.replace(/\\int/g, '∫')
