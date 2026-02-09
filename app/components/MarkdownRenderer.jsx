@@ -21,6 +21,25 @@ function parseMarkdown(text) {
   // Normalize line endings
   let normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
 
+  // Extract and render LaTeX math expressions first
+  const mathBlocks = []
+
+  // Display math: $$ ... $$
+  normalized = normalized.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
+    const placeholder = `%%MATHBLOCK${mathBlocks.length}%%`
+    const rendered = renderLatex(math.trim())
+    mathBlocks.push(`<div class="math-block">${rendered}</div>`)
+    return placeholder
+  })
+
+  // Inline math: $ ... $
+  normalized = normalized.replace(/\$([^\$\n]+?)\$/g, (match, math) => {
+    const placeholder = `%%MATHBLOCK${mathBlocks.length}%%`
+    const rendered = renderLatex(math.trim())
+    mathBlocks.push(`<span class="math-inline">${rendered}</span>`)
+    return placeholder
+  })
+
   // Extract code blocks first to protect them from other parsing
   // Use %%CODEBLOCK%% format to avoid markdown bold/italic patterns matching
   const codeBlocks = []
@@ -123,6 +142,112 @@ function parseMarkdown(text) {
   inlineCodes.forEach((code, i) => {
     html = html.replace(`%%INLINECODE${i}%%`, code)
   })
+
+  // Restore math blocks
+  mathBlocks.forEach((math, i) => {
+    html = html.replace(`%%MATHBLOCK${i}%%`, math)
+  })
+
+  return html
+}
+
+function renderLatex(latex) {
+  // Simple LaTeX to HTML converter for common math notation
+  let html = latex
+
+  // Handle \boxed{} - render as highlighted box
+  html = html.replace(/\\boxed\{([^}]+)\}/g, '<span class="math-boxed">$1</span>')
+
+  // Fractions: \frac{a}{b}
+  html = html.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '<span class="math-frac"><span class="math-frac-num">$1</span><span class="math-frac-den">$2</span></span>')
+
+  // Square root: \sqrt{x} or \sqrt[n]{x}
+  html = html.replace(/\\sqrt(?:\[([^\]]+)\])?\{([^}]+)\}/g, (match, index, content) => {
+    if (index) {
+      return `<span class="math-root"><sup class="math-root-index">${index}</sup>√<span class="math-root-content">${content}</span></span>`
+    }
+    return `√<span class="math-root-content">${content}</span>`
+  })
+
+  // Integrals: \int
+  html = html.replace(/\\int/g, '∫')
+
+  // Limits: \lim
+  html = html.replace(/\\lim/g, 'lim')
+
+  // Sum: \sum
+  html = html.replace(/\\sum/g, '∑')
+
+  // Product: \prod
+  html = html.replace(/\\prod/g, '∏')
+
+  // Infinity: \infty
+  html = html.replace(/\\infty/g, '∞')
+
+  // Pi, theta, etc: common Greek letters
+  const greekLetters = {
+    'alpha': 'α', 'beta': 'β', 'gamma': 'γ', 'delta': 'δ', 'epsilon': 'ε',
+    'zeta': 'ζ', 'eta': 'η', 'theta': 'θ', 'iota': 'ι', 'kappa': 'κ',
+    'lambda': 'λ', 'mu': 'μ', 'nu': 'ν', 'xi': 'ξ', 'pi': 'π',
+    'rho': 'ρ', 'sigma': 'σ', 'tau': 'τ', 'phi': 'φ', 'chi': 'χ',
+    'psi': 'ψ', 'omega': 'ω',
+    'Gamma': 'Γ', 'Delta': 'Δ', 'Theta': 'Θ', 'Lambda': 'Λ', 'Xi': 'Ξ',
+    'Pi': 'Π', 'Sigma': 'Σ', 'Phi': 'Φ', 'Psi': 'Ψ', 'Omega': 'Ω'
+  }
+
+  for (const [latex, symbol] of Object.entries(greekLetters)) {
+    html = html.replace(new RegExp(`\\\\${latex}\\b`, 'g'), symbol)
+  }
+
+  // Superscripts: ^{...} or ^x
+  html = html.replace(/\^\{([^}]+)\}/g, '<sup>$1</sup>')
+  html = html.replace(/\^(\w)/g, '<sup>$1</sup>')
+
+  // Subscripts: _{...} or _x
+  html = html.replace(/_\{([^}]+)\}/g, '<sub>$1</sub>')
+  html = html.replace(/_(\w)/g, '<sub>$1</sub>')
+
+  // Common functions
+  html = html.replace(/\\sin\b/g, 'sin')
+  html = html.replace(/\\cos\b/g, 'cos')
+  html = html.replace(/\\tan\b/g, 'tan')
+  html = html.replace(/\\arcsin\b/g, 'arcsin')
+  html = html.replace(/\\arccos\b/g, 'arccos')
+  html = html.replace(/\\arctan\b/g, 'arctan')
+  html = html.replace(/\\log\b/g, 'log')
+  html = html.replace(/\\ln\b/g, 'ln')
+  html = html.replace(/\\exp\b/g, 'exp')
+
+  // Operators
+  html = html.replace(/\\times/g, '×')
+  html = html.replace(/\\div/g, '÷')
+  html = html.replace(/\\pm/g, '±')
+  html = html.replace(/\\mp/g, '∓')
+  html = html.replace(/\\cdot/g, '·')
+  html = html.replace(/\\ldots/g, '…')
+  html = html.replace(/\\dots/g, '…')
+
+  // Relations
+  html = html.replace(/\\leq/g, '≤')
+  html = html.replace(/\\geq/g, '≥')
+  html = html.replace(/\\neq/g, '≠')
+  html = html.replace(/\\approx/g, '≈')
+  html = html.replace(/\\equiv/g, '≡')
+
+  // Arrows
+  html = html.replace(/\\rightarrow/g, '→')
+  html = html.replace(/\\leftarrow/g, '←')
+  html = html.replace(/\\Rightarrow/g, '⇒')
+  html = html.replace(/\\Leftarrow/g, '⇐')
+
+  // Remove common LaTeX commands that don't need special rendering
+  html = html.replace(/\\left/g, '')
+  html = html.replace(/\\right/g, '')
+  html = html.replace(/\\,/g, ' ')
+  html = html.replace(/\\;/g, ' ')
+  html = html.replace(/\\!/g, '')
+  html = html.replace(/\\quad/g, ' ')
+  html = html.replace(/\\qquad/g, '  ')
 
   return html
 }

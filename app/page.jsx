@@ -145,6 +145,7 @@ export default function Home() {
         setModel(chat.model || model)
         setSystemPrompt(chat.systemPrompt || systemPrompt)
         setTemperature(chat.temperature ?? temperature)
+        setThinkingEnabled(chat.thinkingEnabled ?? thinkingEnabled)
       }
     } else {
       setMessages([])
@@ -193,6 +194,7 @@ export default function Home() {
       model,
       systemPrompt,
       temperature,
+      thinkingEnabled,
       messages: updatedMessages,
     }
 
@@ -204,7 +206,7 @@ export default function Home() {
     }
 
     return chatId
-  }, [currentChatId, provider, model, systemPrompt, temperature])
+  }, [currentChatId, provider, model, systemPrompt, temperature, thinkingEnabled])
 
   // Send message
   const handleSend = useCallback(async (content, images = []) => {

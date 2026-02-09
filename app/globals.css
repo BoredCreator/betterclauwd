@@ -530,3 +530,62 @@ button:hover,
   margin-bottom: 0.25rem !important;
   padding-bottom: 0.25rem !important;
 }
+
+/* Math rendering styles */
+.math-block {
+  display: block;
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 1.1em;
+  text-align: center;
+}
+
+.math-inline {
+  display: inline;
+  padding: 0.1rem 0.3rem;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  font-size: 1.05em;
+}
+
+.math-boxed {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border: 2px solid var(--success);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  font-weight: 600;
+  color: var(--success);
+}
+
+.math-frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  margin: 0 0.2em;
+}
+
+.math-frac-num {
+  border-bottom: 1px solid var(--text);
+  padding-bottom: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+.math-frac-den {
+  padding-top: 0.1em;
+}
+
+.math-root-content {
+  border-top: 1px solid var(--text);
+  padding: 0 0.2em;
+}
+
+.math-root-index {
+  font-size: 0.7em;
+  vertical-align: super;
+}
