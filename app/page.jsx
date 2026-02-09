@@ -24,6 +24,7 @@ import {
   getLastUsedModel,
   setLastUsedModel,
   getCustomProviderConfig,
+  getActualModelId,
 } from '@/lib/storage'
 import PromoMessage from './components/PromoMessage'
 import { getProvider, modelSupportsImages, getDefaultModel, PROVIDERS } from '@/lib/providers'
@@ -252,6 +253,8 @@ export default function Home() {
         ? customProviderConfig.endpoint
         : customEndpoints[provider]
       const providerInstance = getProvider(provider, endpointToUse)
+      // Apply model override if set
+      const actualModelId = getActualModelId(provider, model)
       const stream = providerInstance.sendMessage(
         apiKey,
         updatedMessages.map(m => ({
@@ -260,7 +263,7 @@ export default function Home() {
           images: m.images,
         })),
         {
-          model,
+          model: actualModelId,
           systemPrompt,
           temperature,
           maxTokens: getSettings().defaultMaxTokens,
@@ -402,6 +405,8 @@ export default function Home() {
           ? customProviderConfig.endpoint
           : customEndpoints[provider]
         const providerInstance = getProvider(provider, endpointToUse)
+        // Apply model override if set
+        const actualModelId = getActualModelId(provider, model)
 
         const stream = providerInstance.sendMessage(
           apiKey,
@@ -411,7 +416,7 @@ export default function Home() {
             images: m.images,
           })),
           {
-            model,
+            model: actualModelId,
             systemPrompt,
             temperature,
             maxTokens: getSettings().defaultMaxTokens,

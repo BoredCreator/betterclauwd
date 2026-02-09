@@ -4,7 +4,7 @@ import { useState } from 'react'
 import styles from './Settings.module.css'
 import Slider from './Slider'
 import { PROVIDERS, getModelMaxTokens, DEFAULT_ENDPOINTS } from '@/lib/providers'
-import { getApiKeys, setApiKey, getSettings, updateSettings, exportAllData, importData, clearAllData, getTokenUsage, resetTokenUsage, getCustomEndpoints, setCustomEndpoint, getCustomProviderConfig, updateCustomProviderConfig } from '@/lib/storage'
+import { getApiKeys, setApiKey, getSettings, updateSettings, exportAllData, importData, clearAllData, getTokenUsage, resetTokenUsage, getCustomEndpoints, setCustomEndpoint, getCustomProviderConfig, updateCustomProviderConfig, getProviderModelOverrides, setProviderModelOverrides } from '@/lib/storage'
 
 export default function Settings({ isOpen, onClose }) {
   const [activeTab, setActiveTab] = useState('api-keys')
@@ -16,6 +16,8 @@ export default function Settings({ isOpen, onClose }) {
   const [customProviderConfig, setCustomProviderConfig] = useState(getCustomProviderConfig())
   const [newModelName, setNewModelName] = useState('')
   const [newModelId, setNewModelId] = useState('')
+  const [modelOverrides, setModelOverrides] = useState(getProviderModelOverrides())
+  const [editingModelProvider, setEditingModelProvider] = useState(null)
 
   if (!isOpen) return null
 
@@ -159,6 +161,29 @@ export default function Settings({ isOpen, onClose }) {
   const handleResetTokenUsage = () => {
     resetTokenUsage()
     setTokenUsage(getTokenUsage())
+  }
+
+  const handleModelOverrideChange = (providerId, modelIndex, newId) => {
+    const newOverrides = { ...modelOverrides }
+    if (!newOverrides[providerId]) {
+      newOverrides[providerId] = {}
+    }
+    const originalId = PROVIDERS[providerId].models[modelIndex].id
+    newOverrides[providerId][originalId] = newId
+    setModelOverrides(newOverrides)
+    setProviderModelOverrides(newOverrides)
+  }
+
+  const handleRemoveModelOverride = (providerId, originalId) => {
+    const newOverrides = { ...modelOverrides }
+    if (newOverrides[providerId]) {
+      delete newOverrides[providerId][originalId]
+      if (Object.keys(newOverrides[providerId]).length === 0) {
+        delete newOverrides[providerId]
+      }
+    }
+    setModelOverrides(newOverrides)
+    setProviderModelOverrides(newOverrides)
   }
 
   return (
@@ -525,6 +550,54 @@ export default function Settings({ isOpen, onClose }) {
 
           {activeTab === 'advanced' && (
             <div className={styles.section}>
+              {/* Model ID Overrides Section */}
+              <div className={styles.modelOverridesSection}>
+                <h3 className={styles.sectionTitle}>Model ID Overrides</h3>
+                <p className={styles.sectionDesc}>
+                  Manually override the API model IDs for each provider. Useful when providers update their model naming.
+                </p>
+
+                {Object.values(PROVIDERS).filter(p => p.id !== 'custom').map(provider => (
+                  <div key={provider.id} className={styles.providerOverrides}>
+                    <h4 className={styles.providerName}>{provider.name}</h4>
+                    {provider.models.map((model, idx) => {
+                      const overrideId = modelOverrides[provider.id]?.[model.id]
+                      return (
+                        <div key={model.id} className={styles.modelOverrideItem}>
+                          <div className={styles.modelInfo}>
+                            <span className={styles.modelDisplayName}>{model.name}</span>
+                            <span className={styles.modelOriginalId}>Default: {model.id}</span>
+                          </div>
+                          <div className={styles.modelOverrideInput}>
+                            <input
+                              type="text"
+                              value={overrideId || ''}
+                              onChange={(e) => handleModelOverrideChange(provider.id, idx, e.target.value)}
+                              placeholder={`Override model ID (leave blank for default)`}
+                              className={styles.input}
+                            />
+                            {overrideId && (
+                              <button
+                                onClick={() => handleRemoveModelOverride(provider.id, model.id)}
+                                className={styles.clearOverrideBtn}
+                                title="Clear override"
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <line x1="18" y1="6" x2="6" y2="18"/>
+                                  <line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ))}
+              </div>
+
+              <hr className={styles.divider} />
+
               {/* Custom Endpoint Section */}
               <div className={styles.customEndpointSection}>
                 <h3 className={styles.sectionTitle}>Custom Endpoint</h3>
