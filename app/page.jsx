@@ -25,6 +25,7 @@ import {
   setLastUsedModel,
   getCustomProviderConfig,
   getActualModelId,
+  deleteOldestChats,
 } from '@/lib/storage'
 import PromoMessage from './components/PromoMessage'
 import { getProvider, modelSupportsImages, getDefaultModel, PROVIDERS } from '@/lib/providers'
@@ -43,6 +44,8 @@ export default function Home() {
   const [initialized, setInitialized] = useState(false)
   const [showPromo, setShowPromo] = useState(false)
   const [promoHiddenForever, setPromoHiddenForever] = useState(false)
+  const [storageError, setStorageError] = useState(false)
+  const [cleanupCount, setCleanupCount] = useState(5)
 
   // Chat settings
   const [provider, setProvider] = useState('anthropic')
@@ -59,11 +62,11 @@ export default function Home() {
 
   // Handle URL hash changes for chat routing
   useEffect(() => {
-    const handleHashChange = () => {
+    const handleHashChange = async () => {
       const hash = window.location.hash
       if (hash.startsWith('#/chat/')) {
         const chatId = hash.substring(7) // Remove '#/chat/'
-        const chat = getChatById(chatId)
+        const chat = await getChatById(chatId)
         if (chat) {
           setCurrentChatId(chatId)
         } else {
@@ -133,9 +136,8 @@ export default function Home() {
       root.setAttribute('data-compact-headers', custom.compactHeaders ? 'true' : 'false')
     }
 
-    // Load chats
-    const loadedChats = getChats()
-    setChats(loadedChats)
+    // Load chats (async)
+    getChats().then(loadedChats => setChats(loadedChats))
 
     // Check for API keys
     if (!hasAnyApiKey()) {
@@ -167,15 +169,16 @@ export default function Home() {
   // Load chat when currentChatId changes
   useEffect(() => {
     if (currentChatId) {
-      const chat = getChatById(currentChatId)
-      if (chat) {
-        setMessages(chat.messages || [])
-        setProvider(chat.provider || provider)
-        setModel(chat.model || model)
-        setSystemPrompt(chat.systemPrompt || systemPrompt)
-        setTemperature(chat.temperature ?? temperature)
-        setThinkingEnabled(chat.thinkingEnabled ?? thinkingEnabled)
-      }
+      getChatById(currentChatId).then(chat => {
+        if (chat) {
+          setMessages(chat.messages || [])
+          setProvider(chat.provider || provider)
+          setModel(chat.model || model)
+          setSystemPrompt(chat.systemPrompt || systemPrompt)
+          setTemperature(chat.temperature ?? temperature)
+          setThinkingEnabled(chat.thinkingEnabled ?? thinkingEnabled)
+        }
+      })
     } else {
       setMessages([])
     }
@@ -213,18 +216,18 @@ export default function Home() {
   }, [])
 
   // Delete chat
-  const handleDeleteChat = useCallback((chatId) => {
-    deleteChat(chatId)
-    setChats(getChats())
+  const handleDeleteChat = useCallback(async (chatId) => {
+    await deleteChat(chatId)
+    setChats(await getChats())
     if (currentChatId === chatId) {
       handleNewChat()
     }
   }, [currentChatId, handleNewChat])
 
   // Save current chat
-  const saveCurrentChat = useCallback((updatedMessages) => {
+  const saveCurrentChat = useCallback(async (updatedMessages) => {
     const chatId = currentChatId || generateId()
-    const existingChat = currentChatId ? getChatById(currentChatId) : null
+    const existingChat = currentChatId ? await getChatById(currentChatId) : null
 
     const chat = {
       id: chatId,
@@ -237,8 +240,15 @@ export default function Home() {
       messages: updatedMessages,
     }
 
-    saveChatToStorage(chat)
-    setChats(getChats())
+    try {
+      await saveChatToStorage(chat)
+      setStorageError(false)
+    } catch (err) {
+      if (err?.name === 'QuotaExceededError' || err?.message?.includes('quota')) {
+        setStorageError(true)
+      }
+    }
+    setChats(await getChats())
 
     if (!currentChatId) {
       setCurrentChatId(chatId)
@@ -246,6 +256,13 @@ export default function Home() {
 
     return chatId
   }, [currentChatId, provider, model, systemPrompt, temperature, thinkingEnabled])
+
+  // Handle storage cleanup
+  const handleStorageCleanup = useCallback(async () => {
+    await deleteOldestChats(cleanupCount)
+    setChats(await getChats())
+    setStorageError(false)
+  }, [cleanupCount])
 
   // Send message
   const handleSend = useCallback(async (content, images = []) => {
@@ -337,12 +354,12 @@ export default function Home() {
         const apiKeys = getApiKeys()
         const customEndpoints = getCustomEndpoints()
         autoGenerateTitle(finalMessages, provider, apiKeys[provider], customEndpoints[provider])
-          .then(title => {
+          .then(async (title) => {
             if (title) {
-              const chat = getChatById(savedChatId)
+              const chat = await getChatById(savedChatId)
               if (chat) {
-                saveChat({ ...chat, title })
-                setChats(getChats())
+                await saveChatToStorage({ ...chat, title })
+                setChats(await getChats())
               }
             }
           })
@@ -706,6 +723,28 @@ export default function Home() {
           <div className={styles.error}>
             <span>{error}</span>
             <button onClick={() => setError(null)}>Dismiss</button>
+          </div>
+        )}
+
+        {/* Storage Error */}
+        {storageError && (
+          <div className={styles.error}>
+            <span>Storage full. Delete old chats to free space.</span>
+            <div className={styles.storageCleanup}>
+              <select
+                value={cleanupCount}
+                onChange={(e) => setCleanupCount(Number(e.target.value))}
+                className={styles.cleanupSelect}
+              >
+                <option value={3}>3 chats</option>
+                <option value={5}>5 chats</option>
+                <option value={10}>10 chats</option>
+                <option value={20}>20 chats</option>
+                <option value={50}>50 chats</option>
+              </select>
+              <button onClick={handleStorageCleanup}>Delete oldest</button>
+              <button onClick={() => setStorageError(false)}>Dismiss</button>
+            </div>
           </div>
         )}
 
