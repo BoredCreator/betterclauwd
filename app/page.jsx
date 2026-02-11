@@ -264,6 +264,85 @@ export default function Home() {
     setStorageError(false)
   }, [cleanupCount])
 
+  // Handle image generation from commands in assistant message
+  const handleImageGeneration = useCallback(async (content, currentProvider, currentApiKey) => {
+    try {
+      const generateMatches = [...content.matchAll(/\[\[GENERATE_IMAGE:\s*(.+?)\]\]/g)]
+      const editMatches = [...content.matchAll(/\[\[EDIT_IMAGE:\s*(.+?)\]\]/g)]
+
+      const customEndpoints = getCustomEndpoints()
+      const endpointToUse = customEndpoints[currentProvider]
+      const providerInstance = getProvider(currentProvider, endpointToUse)
+
+      // Process generate commands
+      for (const match of generateMatches) {
+        const prompt = match[1].trim()
+
+        try {
+          let imageData
+          if (currentProvider === 'openai') {
+            // Use OpenAI image generation
+            const result = await providerInstance.generateImage(currentApiKey, prompt, {
+              model: 'gpt-image-1.5',
+              size: '1024x1024',
+              quality: 'standard',
+            })
+            imageData = result[0]?.url
+          } else if (currentProvider === 'google') {
+            // Use Google Nano Banana
+            const result = await providerInstance.generateImage(currentApiKey, prompt, {
+              model: 'nano-banana',
+              aspectRatio: '1:1',
+            })
+            imageData = result
+          }
+
+          if (imageData) {
+            // Add image to the last assistant message
+            setMessages(prev => {
+              const newMessages = [...prev]
+              const lastMsg = newMessages[newMessages.length - 1]
+              if (lastMsg?.role === 'assistant') {
+                lastMsg.generatedImages = lastMsg.generatedImages || []
+                lastMsg.generatedImages.push({ url: imageData, prompt })
+              }
+              return newMessages
+            })
+          }
+        } catch (err) {
+          console.error('Image generation failed:', err)
+          // Add error message to chat
+          setMessages(prev => {
+            const newMessages = [...prev]
+            const lastMsg = newMessages[newMessages.length - 1]
+            if (lastMsg?.role === 'assistant') {
+              lastMsg.content += `\n\n_[Image generation failed: ${err.message}]_`
+            }
+            return newMessages
+          })
+        }
+      }
+
+      // Process edit commands
+      for (const match of editMatches) {
+        const instruction = match[1].trim()
+
+        // For edit commands, we would need the previous image
+        // For now, just notify that edit is not yet fully implemented
+        setMessages(prev => {
+          const newMessages = [...prev]
+          const lastMsg = newMessages[newMessages.length - 1]
+          if (lastMsg?.role === 'assistant') {
+            lastMsg.content += `\n\n_[Image edit requested: "${instruction}" - Edit functionality requires selecting a previous image]_`
+          }
+          return newMessages
+        })
+      }
+    } catch (err) {
+      console.error('Image generation handler failed:', err)
+    }
+  }, [])
+
   // Send message
   const handleSend = useCallback(async (content, images = []) => {
     const apiKeys = getApiKeys()
@@ -313,6 +392,11 @@ export default function Home() {
       const providerInstance = getProvider(provider, endpointToUse)
       // Apply model override if set
       const actualModelId = getActualModelId(provider, model)
+      const settings = getSettings()
+      // Image generation is available if enabled AND an OpenAI key exists (uses OpenAI API for generation)
+      const hasOpenAIKey = !!apiKeys.openai
+      const imageGenAvailable = settings.imageGenerationEnabled && hasOpenAIKey
+
       const stream = providerInstance.sendMessage(
         apiKey,
         updatedMessages.map(m => ({
@@ -324,9 +408,10 @@ export default function Home() {
           model: actualModelId,
           systemPrompt,
           temperature,
-          maxTokens: getSettings().defaultMaxTokens,
+          maxTokens: settings.defaultMaxTokens,
           signal: abortControllerRef.current.signal,
           thinking: thinkingEnabled && provider === 'anthropic',
+          imageGenerationEnabled: imageGenAvailable,
         }
       )
 
@@ -344,15 +429,24 @@ export default function Home() {
         })
       }
 
+      // Parse for image generation commands after streaming is complete
+      // Uses OpenAI API for image generation regardless of chat provider
+      if (imageGenAvailable) {
+        const generateMatch = fullContent.match(/\[\[GENERATE_IMAGE:\s*(.+?)\]\]/g)
+        const editMatch = fullContent.match(/\[\[EDIT_IMAGE:\s*(.+?)\]\]/g)
+
+        if (generateMatch || editMatch) {
+          // Always use OpenAI for image generation
+          handleImageGeneration(fullContent, 'openai', apiKeys.openai).catch(console.error)
+        }
+      }
+
       // Save chat with final messages
       const finalMessages = [...updatedMessages, { ...assistantMessage, content: fullContent }]
       const savedChatId = saveCurrentChat(finalMessages)
 
       // Auto-generate title if enabled and it's a new chat (first exchange)
-      const settings = getSettings()
       if (settings.autoGenerateTitle && finalMessages.length === 2 && savedChatId) {
-        const apiKeys = getApiKeys()
-        const customEndpoints = getCustomEndpoints()
         autoGenerateTitle(finalMessages, provider, apiKeys[provider], customEndpoints[provider])
           .then(async (title) => {
             if (title) {
@@ -391,7 +485,7 @@ export default function Home() {
       setIsGenerating(false)
       abortControllerRef.current = null
     }
-  }, [messages, provider, model, systemPrompt, temperature, saveCurrentChat, promoHiddenForever, thinkingEnabled])
+  }, [messages, provider, model, systemPrompt, temperature, saveCurrentChat, promoHiddenForever, thinkingEnabled, handleImageGeneration])
 
   // Stop generation
   const handleStop = useCallback(() => {

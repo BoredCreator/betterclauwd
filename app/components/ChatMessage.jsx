@@ -126,6 +126,24 @@ export default function ChatMessage({ message, onRegenerate, onEdit, isLast, isG
         )}
       </div>
 
+      {/* Generated images */}
+      {message.generatedImages && message.generatedImages.length > 0 && (
+        <div className={styles.generatedImages}>
+          {message.generatedImages.map((img, idx) => (
+            <div key={idx} className={styles.generatedImageContainer}>
+              <img
+                src={img.url}
+                alt={img.prompt || `Generated image ${idx + 1}`}
+                className={styles.generatedImage}
+              />
+              {img.prompt && (
+                <p className={styles.imagePrompt}>Prompt: {img.prompt}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Actions */}
       {!isEditing && (
         <div className={styles.actions}>
