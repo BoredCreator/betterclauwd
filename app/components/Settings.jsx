@@ -516,6 +516,32 @@ export default function Settings({ isOpen, onClose }) {
                 <label className={styles.toggleLabel}>
                   <input
                     type="checkbox"
+                    checked={settings.webSearchEnabled || false}
+                    onChange={(e) => handleSettingChange('webSearchEnabled', e.target.checked)}
+                    className={styles.checkbox}
+                  />
+                  <span className={styles.toggleText}>Enable web search</span>
+                  <span className={styles.toggleHint}>Claude uses Anthropic's web search tool; GPT uses dedicated search models (gpt-5-search-api)</span>
+                </label>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.toggleLabel}>
+                  <input
+                    type="checkbox"
+                    checked={settings.mathEnabled || false}
+                    onChange={(e) => handleSettingChange('mathEnabled', e.target.checked)}
+                    className={styles.checkbox}
+                  />
+                  <span className={styles.toggleText}>Enable math tools</span>
+                  <span className={styles.toggleHint}>Enhanced math computation with step-by-step solutions and LaTeX notation</span>
+                </label>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.toggleLabel}>
+                  <input
+                    type="checkbox"
                     checked={settings.tokenTrackingEnabled || false}
                     onChange={(e) => handleSettingChange('tokenTrackingEnabled', e.target.checked)}
                     className={styles.checkbox}

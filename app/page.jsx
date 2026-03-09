@@ -49,7 +49,7 @@ export default function Home() {
 
   // Chat settings
   const [provider, setProvider] = useState('anthropic')
-  const [model, setModel] = useState('claude-sonnet-4-5-20250514')
+  const [model, setModel] = useState('claude-sonnet-4-6')
   const [systemPrompt, setSystemPrompt] = useState('You are a helpful assistant.')
   const [temperature, setTemperature] = useState(0.7)
   const [thinkingEnabled, setThinkingEnabled] = useState(false)
@@ -411,6 +411,8 @@ export default function Home() {
           maxTokens: settings.defaultMaxTokens,
           signal: abortControllerRef.current.signal,
           thinking: thinkingEnabled && provider === 'anthropic',
+          webSearch: settings.webSearchEnabled,
+          mathEnabled: settings.mathEnabled,
           imageGenerationEnabled: imageGenAvailable,
         }
       )
@@ -560,6 +562,7 @@ export default function Home() {
         // Apply model override if set
         const actualModelId = getActualModelId(provider, model)
 
+        const editSettings = getSettings()
         const stream = providerInstance.sendMessage(
           apiKey,
           messagesUpToEdit.map(m => ({
@@ -571,9 +574,11 @@ export default function Home() {
             model: actualModelId,
             systemPrompt,
             temperature,
-            maxTokens: getSettings().defaultMaxTokens,
+            maxTokens: editSettings.defaultMaxTokens,
             signal: abortControllerRef.current.signal,
             thinking: thinkingEnabled && provider === 'anthropic',
+            webSearch: editSettings.webSearchEnabled,
+            mathEnabled: editSettings.mathEnabled,
           }
         )
 
