@@ -356,7 +356,9 @@ export default function Home() {
   }, [])
 
   // Send message
-  const handleSend = useCallback(async (content, images = []) => {
+  // baseMessages: optional explicit context array; when omitted uses `messages` from closure.
+  // handleRegenerate must pass this to avoid reading stale state after setMessages().
+  const handleSend = useCallback(async (content, images = [], baseMessages = null) => {
     const apiKeys = getApiKeys()
     const apiKey = apiKeys[provider]
 
@@ -379,7 +381,8 @@ export default function Home() {
       timestamp: new Date().toISOString(),
     }
 
-    const updatedMessages = [...messages, userMessage]
+    const contextMessages = baseMessages ?? messages
+    const updatedMessages = [...contextMessages, userMessage]
     setMessages(updatedMessages)
 
     // Create placeholder for assistant message
@@ -558,7 +561,9 @@ export default function Home() {
       const actualModelId = getActualModelId(provider, model)
       const settings = getSettings()
 
-      // Stream all responses in parallel
+      // Stream all responses in parallel.
+      // Each stream throttles its setMessages calls to ~30ms intervals so React
+      // isn't overwhelmed with hundreds of state updates on long responses.
       const streamPromises = images.map(async (img, i) => {
         const assistantMsgId = batchMessages[i * 2 + 1].id
         const conversationContext = [
@@ -567,6 +572,23 @@ export default function Home() {
         ]
 
         let fullContent = ''
+        let lastFlush = 0
+
+        const flush = (final = false) => {
+          const now = Date.now()
+          if (!final && now - lastFlush < 30) return
+          lastFlush = now
+          const captured = fullContent
+          setMessages(prev => {
+            const updated = [...prev]
+            const idx = updated.findIndex(m => m.id === assistantMsgId)
+            if (idx !== -1) {
+              updated[idx] = { ...updated[idx], content: captured }
+            }
+            return updated
+          })
+        }
+
         try {
           const stream = providerInstance.sendMessage(
             apiKey,
@@ -583,39 +605,33 @@ export default function Home() {
 
           for await (const chunk of stream) {
             fullContent += chunk
-            const captured = fullContent
-            setMessages(prev => {
-              const updated = [...prev]
-              const idx = updated.findIndex(m => m.id === assistantMsgId)
-              if (idx !== -1) {
-                updated[idx] = { ...updated[idx], content: captured }
-              }
-              return updated
-            })
+            flush()
           }
+          // Always flush final content
+          flush(true)
         } catch (err) {
           if (err.name !== 'AbortError') {
-            const errMsg = `Error: ${err.message}`
-            setMessages(prev => {
-              const updated = [...prev]
-              const idx = updated.findIndex(m => m.id === assistantMsgId)
-              if (idx !== -1) {
-                updated[idx] = { ...updated[idx], content: errMsg }
-              }
-              return updated
-            })
+            fullContent = `Error: ${err.message}`
+            flush(true)
           }
         }
 
         return fullContent
       })
 
-      await Promise.all(streamPromises)
+      const results = await Promise.all(streamPromises)
 
-      setMessages(prev => {
-        saveCurrentChat(prev)
-        return prev
+      // Build final messages directly from results — don't call saveCurrentChat
+      // inside a setMessages updater (Strict Mode calls updaters twice).
+      const finalBatchMessages = batchMessages.map((msg, bi) => {
+        if (msg.role === 'assistant') {
+          const streamIdx = Math.floor(bi / 2)
+          return { ...msg, content: results[streamIdx] || '' }
+        }
+        return msg
       })
+      const finalMessages = [...messages, ...finalBatchMessages]
+      saveCurrentChat(finalMessages)
     } catch (err) {
       if (err.name !== 'AbortError') {
         setError(err.message || 'An error occurred.')
@@ -637,13 +653,14 @@ export default function Home() {
   const handleRegenerate = useCallback(() => {
     if (messages.length < 2) return
 
-    // Remove last assistant message and resend
-    const messagesWithoutLast = messages.slice(0, -1)
-    const lastUserMessage = messagesWithoutLast[messagesWithoutLast.length - 1]
+    // Remove last assistant message, then the last user message
+    const messagesWithoutAssistant = messages.slice(0, -1)
+    const lastUserMessage = messagesWithoutAssistant[messagesWithoutAssistant.length - 1]
 
     if (lastUserMessage?.role === 'user') {
-      setMessages(messagesWithoutLast.slice(0, -1))
-      handleSend(lastUserMessage.content, lastUserMessage.images)
+      const baseMessages = messagesWithoutAssistant.slice(0, -1)
+      // Pass baseMessages explicitly so handleSend doesn't read stale `messages` closure
+      handleSend(lastUserMessage.content, lastUserMessage.images, baseMessages)
     }
   }, [messages, handleSend])
 
