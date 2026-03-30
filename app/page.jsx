@@ -58,7 +58,9 @@ export default function Home() {
 
   // Refs
   const messagesEndRef = useRef(null)
+  const messagesContainerRef = useRef(null)
   const abortControllerRef = useRef(null)
+  const shouldAutoScrollRef = useRef(true)
 
   // Handle URL hash changes for chat routing
   useEffect(() => {
@@ -150,13 +152,23 @@ export default function Home() {
     setInitialized(true)
   }, [])
 
-  // Scroll to bottom when messages change
+  // Smart scroll: track if user has manually scrolled up
+  const handleMessagesScroll = useCallback(() => {
+    const container = messagesContainerRef.current
+    if (!container) return
+    const { scrollTop, scrollHeight, clientHeight } = container
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight
+    // Resume auto-scroll when user scrolls back near the bottom
+    shouldAutoScrollRef.current = distanceFromBottom < 100
+  }, [])
+
+  // Scroll to bottom when messages change, only if user hasn't scrolled up
   useEffect(() => {
-    // Use instant scroll during generation to keep up with streaming
-    // Use smooth scroll otherwise for better UX
-    messagesEndRef.current?.scrollIntoView({
-      behavior: isGenerating ? 'auto' : 'smooth'
-    })
+    if (shouldAutoScrollRef.current) {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: isGenerating ? 'auto' : 'smooth'
+      })
+    }
   }, [messages, isGenerating])
 
   // Save last used model when it changes
@@ -355,6 +367,8 @@ export default function Home() {
 
     setError(null)
     setIsGenerating(true)
+    // User is sending a new message — snap to bottom
+    shouldAutoScrollRef.current = true
 
     // Add user message
     const userMessage = {
@@ -488,6 +502,129 @@ export default function Home() {
       abortControllerRef.current = null
     }
   }, [messages, provider, model, systemPrompt, temperature, saveCurrentChat, promoHiddenForever, thinkingEnabled, handleImageGeneration])
+
+  // Parallel send: each image gets its own request, all streamed simultaneously
+  const handleParallelSend = useCallback(async (content, images) => {
+    const apiKeys = getApiKeys()
+    const apiKey = apiKeys[provider]
+
+    if (!apiKey) {
+      setError(`No API key configured for ${PROVIDERS[provider]?.name}. Please add one in Settings.`)
+      return
+    }
+
+    setError(null)
+    setIsGenerating(true)
+    shouldAutoScrollRef.current = true
+
+    const batchId = generateId()
+    const batchMessages = []
+
+    // Build all user + assistant placeholder pairs
+    images.forEach((img, i) => {
+      batchMessages.push({
+        id: generateId(),
+        role: 'user',
+        content,
+        images: [img],
+        batchId,
+        batchIndex: i,
+        batchTotal: images.length,
+        timestamp: new Date().toISOString(),
+      })
+      batchMessages.push({
+        id: generateId(),
+        role: 'assistant',
+        content: '',
+        batchId,
+        batchIndex: i,
+        batchTotal: images.length,
+        timestamp: new Date().toISOString(),
+      })
+    })
+
+    const allMessages = [...messages, ...batchMessages]
+    setMessages(allMessages)
+
+    try {
+      abortControllerRef.current = new AbortController()
+
+      const customEndpoints = getCustomEndpoints()
+      const customProviderConfig = getCustomProviderConfig()
+      const endpointToUse = provider === 'custom'
+        ? customProviderConfig.endpoint
+        : customEndpoints[provider]
+      const providerInstance = getProvider(provider, endpointToUse)
+      const actualModelId = getActualModelId(provider, model)
+      const settings = getSettings()
+
+      // Stream all responses in parallel
+      const streamPromises = images.map(async (img, i) => {
+        const assistantMsgId = batchMessages[i * 2 + 1].id
+        const conversationContext = [
+          ...messages.map(m => ({ role: m.role, content: m.content, images: m.images })),
+          { role: 'user', content, images: [img] },
+        ]
+
+        let fullContent = ''
+        try {
+          const stream = providerInstance.sendMessage(
+            apiKey,
+            conversationContext,
+            {
+              model: actualModelId,
+              systemPrompt,
+              temperature,
+              maxTokens: settings.defaultMaxTokens,
+              signal: abortControllerRef.current.signal,
+              thinking: thinkingEnabled && provider === 'anthropic',
+            }
+          )
+
+          for await (const chunk of stream) {
+            fullContent += chunk
+            const captured = fullContent
+            setMessages(prev => {
+              const updated = [...prev]
+              const idx = updated.findIndex(m => m.id === assistantMsgId)
+              if (idx !== -1) {
+                updated[idx] = { ...updated[idx], content: captured }
+              }
+              return updated
+            })
+          }
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            const errMsg = `Error: ${err.message}`
+            setMessages(prev => {
+              const updated = [...prev]
+              const idx = updated.findIndex(m => m.id === assistantMsgId)
+              if (idx !== -1) {
+                updated[idx] = { ...updated[idx], content: errMsg }
+              }
+              return updated
+            })
+          }
+        }
+
+        return fullContent
+      })
+
+      await Promise.all(streamPromises)
+
+      setMessages(prev => {
+        saveCurrentChat(prev)
+        return prev
+      })
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setError(err.message || 'An error occurred.')
+      }
+    } finally {
+      setIsGenerating(false)
+      abortControllerRef.current = null
+    }
+  }, [messages, provider, model, systemPrompt, temperature, saveCurrentChat, thinkingEnabled])
 
   // Stop generation
   const handleStop = useCallback(() => {
@@ -724,7 +861,11 @@ export default function Home() {
         </header>
 
         {/* Messages */}
-        <div className={styles.messages}>
+        <div
+          className={styles.messages}
+          ref={messagesContainerRef}
+          onScroll={handleMessagesScroll}
+        >
           {messages.length === 0 ? (
             <div className={styles.empty}>
               <img src="/icon-light.png" alt="betterclauwd" className={styles.logoLight} />
@@ -786,16 +927,66 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            messages.map((msg, idx) => (
-              <ChatMessage
-                key={msg.id}
-                message={msg}
-                isLast={idx === messages.length - 1}
-                isGenerating={isGenerating}
-                onRegenerate={idx === messages.length - 1 ? handleRegenerate : undefined}
-                onEdit={handleEditMessage}
-              />
-            ))
+            (() => {
+              // Group messages: batch messages (same batchId) rendered side-by-side
+              const rendered = []
+              const seenBatchIds = new Set()
+              messages.forEach((msg, idx) => {
+                if (msg.batchId) {
+                  if (seenBatchIds.has(msg.batchId)) return
+                  seenBatchIds.add(msg.batchId)
+                  // Collect all messages for this batch (pairs of user+assistant)
+                  const batchAll = messages.filter(m => m.batchId === msg.batchId)
+                  const pairs = []
+                  for (let pi = 0; pi < batchAll.length; pi += 2) {
+                    pairs.push({ user: batchAll[pi], assistant: batchAll[pi + 1] })
+                  }
+                  const isLastBatch = idx + batchAll.length >= messages.length
+                  rendered.push(
+                    <div key={msg.batchId} className={styles.batchGroup}>
+                      <div className={styles.batchLabel}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="12" y1="2" x2="12" y2="22"/><path d="M4 6l8-4 8 4"/><path d="M4 18l8 4 8-4"/>
+                        </svg>
+                        Parallel responses ({pairs.length})
+                      </div>
+                      <div className={styles.batchGrid}>
+                        {pairs.map((pair) => (
+                          <div key={pair.user.id} className={styles.batchItem}>
+                            <ChatMessage
+                              message={pair.user}
+                              isLast={false}
+                              isGenerating={false}
+                              onEdit={handleEditMessage}
+                            />
+                            {pair.assistant && (
+                              <ChatMessage
+                                message={pair.assistant}
+                                isLast={isLastBatch && isGenerating}
+                                isGenerating={isLastBatch && isGenerating}
+                                onEdit={handleEditMessage}
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                } else {
+                  rendered.push(
+                    <ChatMessage
+                      key={msg.id}
+                      message={msg}
+                      isLast={idx === messages.length - 1}
+                      isGenerating={isGenerating}
+                      onRegenerate={idx === messages.length - 1 ? handleRegenerate : undefined}
+                      onEdit={handleEditMessage}
+                    />
+                  )
+                }
+              })
+              return rendered
+            })()
           )}
           {showPromo && (
             <PromoMessage
@@ -849,7 +1040,11 @@ export default function Home() {
 
         {/* Input */}
         <ChatInput
-          onSend={handleSend}
+          onSend={(content, images, parallel) =>
+            parallel && images.length > 1
+              ? handleParallelSend(content, images)
+              : handleSend(content, images)
+          }
           onStop={handleStop}
           isGenerating={isGenerating}
           disabled={!hasAnyApiKey()}

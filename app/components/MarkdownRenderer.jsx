@@ -9,6 +9,40 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import 'katex/dist/katex.min.css'
 
+// Balance unmatched $ delimiters that appear during streaming to prevent
+// remark-math from treating the rest of the document as a math block.
+function balanceMathDelimiters(text) {
+  if (!text.includes('$')) return text
+
+  // Protect fenced code blocks and inline code from analysis
+  const protected_parts = []
+  let safe = text.replace(/```[\s\S]*?```|`[^`\n]+`/g, (m) => {
+    protected_parts.push(m)
+    return `\x00P${protected_parts.length - 1}\x00`
+  })
+
+  // Replace complete $$ ... $$ display math first
+  const displayParts = []
+  safe = safe.replace(/\$\$([\s\S]*?)\$\$/g, (m) => {
+    displayParts.push(m)
+    return `\x00D${displayParts.length - 1}\x00`
+  })
+
+  // Count remaining single $ signs
+  const dollarCount = (safe.match(/\$/g) || []).length
+  if (dollarCount % 2 !== 0) {
+    // Odd number of $ — add a closing one to prevent the renderer from
+    // consuming all subsequent text as a math expression.
+    safe += '$'
+  }
+
+  // Restore placeholders
+  displayParts.forEach((part, i) => { safe = safe.replace(`\x00D${i}\x00`, part) })
+  protected_parts.forEach((part, i) => { safe = safe.replace(`\x00P${i}\x00`, part) })
+
+  return safe
+}
+
 export default function MarkdownRenderer({ content }) {
   // Pre-process content to handle thinking blocks and streaming code blocks
   const processed = useMemo(() => {
@@ -26,6 +60,9 @@ export default function MarkdownRenderer({ content }) {
     text = text.replace(/```thinking\n([\s\S]*)$/, (match, thinking) => {
       return `%%%THINKING_STREAMING%%%${thinking.trim()}%%%END_THINKING%%%`
     })
+
+    // Balance unmatched math delimiters (common during streaming)
+    text = balanceMathDelimiters(text)
 
     return text
   }, [content])
@@ -78,7 +115,7 @@ export default function MarkdownRenderer({ content }) {
           <ReactMarkdown
             key={i}
             remarkPlugins={[remarkMath, remarkGfm]}
-            rehypePlugins={[rehypeKatex]}
+            rehypePlugins={[[rehypeKatex, { throwOnError: false, errorColor: 'var(--error)' }]]}
             components={{
               code({ node, inline, className, children, ...props }) {
                 const match = /language-(\w+)/.exec(className || '')

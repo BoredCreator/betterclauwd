@@ -1,6 +1,7 @@
 .container {
   display: flex;
   height: 100vh;
+  height: 100dvh; /* dynamic viewport height for iOS Safari */
   overflow: hidden;
 }
 
@@ -394,6 +395,55 @@
   color: var(--error);
   border-radius: 4px;
   width: auto;
+}
+
+/* Parallel batch message groups */
+.batchGroup {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.batchLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.batchGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0;
+}
+
+.batchItem {
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+
+.batchItem:last-child {
+  border-right: none;
+}
+
+@media (max-width: 768px) {
+  .batchGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .batchItem {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .batchItem:last-child {
+    border-bottom: none;
+  }
 }
 
 .footer {

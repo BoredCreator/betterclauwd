@@ -54,6 +54,7 @@
 
 html, body {
   height: 100%;
+  height: 100dvh; /* dynamic viewport height — fixes Safari address bar */
   width: 100%;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
@@ -216,6 +217,9 @@ input, textarea, select {
   transition: border-color 0.2s;
   font-size: 14px;
   width: 100%;
+  /* iOS: prevent Safari from rounding up font size and adding own styling */
+  -webkit-appearance: none;
+  -webkit-text-size-adjust: 100%;
 }
 
 input:focus, textarea:focus, select:focus {

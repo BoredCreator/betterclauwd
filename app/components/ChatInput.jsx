@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import styles from './ChatInput.module.css'
 import ImagePreview from './ImagePreview'
 import { fileToBase64, getImageFromClipboard } from '@/lib/utils'
@@ -14,6 +14,7 @@ export default function ChatInput({
 }) {
   const [input, setInput] = useState('')
   const [images, setImages] = useState([])
+  const [parallelMode, setParallelMode] = useState(false)
   const textareaRef = useRef(null)
   const fileInputRef = useRef(null)
 
@@ -45,28 +46,45 @@ export default function ChatInput({
     }
   }, [supportsImages])
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  const doSubmit = useCallback(() => {
     if (disabled || isGenerating) return
 
-    // If input is empty, use "solve" as the message
     const messageContent = input.trim() || 'solve'
-
-    onSend(messageContent, images)
+    onSend(messageContent, images, parallelMode && images.length > 1)
     setInput('')
     setImages([])
+    setParallelMode(false)
 
-    // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
+  }, [disabled, isGenerating, input, images, parallelMode, onSend])
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    doSubmit()
   }
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      handleSubmit(e)
+      doSubmit()
     }
+  }
+
+  // iOS Safari: Return key adds a literal '\n' to the textarea value
+  // instead of firing keydown. Detect and handle it here.
+  const handleChange = (e) => {
+    const newValue = e.target.value
+
+    // Detect iOS Return key: value gained exactly one trailing newline
+    if (newValue === input + '\n') {
+      // doSubmit() reads the current `input` state (before this change), which is correct
+      doSubmit()
+      return
+    }
+
+    setInput(newValue)
   }
 
   const handleFileSelect = async (e) => {
@@ -78,7 +96,6 @@ export default function ChatInput({
       setImages(prev => [...prev, imageData])
     }
 
-    // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -102,7 +119,12 @@ export default function ChatInput({
   }
 
   const removeImage = (index) => {
-    setImages(prev => prev.filter((_, i) => i !== index))
+    setImages(prev => {
+      const updated = prev.filter((_, i) => i !== index)
+      // Auto-disable parallel mode if fewer than 2 images remain
+      if (updated.length < 2) setParallelMode(false)
+      return updated
+    })
   }
 
   return (
@@ -119,15 +141,36 @@ export default function ChatInput({
           <textarea
             ref={textareaRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder={isGenerating ? 'Generating...' : images.length > 0 ? 'Describe the image... (required)' : 'Type a message... (Shift+Enter for new line)'}
-            disabled={disabled || isGenerating}
+            placeholder={isGenerating ? 'Generating...' : images.length > 0 ? 'Add a message... (optional)' : 'Type a message... (Shift+Enter for new line)'}
+            disabled={disabled && !isGenerating}
             className={styles.textarea}
             rows={1}
+            enterKeyHint="send"
+            autoComplete="off"
+            autoCorrect="on"
+            autoCapitalize="sentences"
           />
 
           <div className={styles.actions}>
+            {/* Parallel mode toggle - only when 2+ images attached */}
+            {supportsImages && images.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setParallelMode(p => !p)}
+                className={`${styles.parallelToggle} ${parallelMode ? styles.active : ''}`}
+                title={parallelMode ? 'Send each image in parallel (one response per image)' : 'Send all images in one message'}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="12" y1="2" x2="12" y2="22"/>
+                  <path d="M4 6l8-4 8 4"/>
+                  <path d="M4 18l8 4 8-4"/>
+                </svg>
+                {parallelMode ? 'Parallel' : '1 msg'}
+              </button>
+            )}
+
             {supportsImages && (
               <>
                 <input
@@ -139,7 +182,7 @@ export default function ChatInput({
                   className={styles.fileInput}
                   id="image-upload"
                 />
-                <label htmlFor="image-upload" className={styles.attachButton} title="Attach image">
+                <label htmlFor="image-upload" className={styles.attachButton} title="Attach image(s)">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                     <circle cx="8.5" cy="8.5" r="1.5"/>
@@ -149,17 +192,30 @@ export default function ChatInput({
               </>
             )}
 
-            <button
-              type="submit"
-              disabled={disabled || isGenerating}
-              className={styles.sendButton}
-              title="Send message"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="22" y1="2" x2="11" y2="13"/>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-              </svg>
-            </button>
+            {isGenerating ? (
+              <button
+                type="button"
+                onClick={onStop}
+                className={`${styles.sendButton} ${styles.stop}`}
+                title="Stop generating"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="4" y="4" width="16" height="16" rx="2"/>
+                </svg>
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={disabled}
+                className={styles.sendButton}
+                title="Send message"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none"/>
+                </svg>
+              </button>
+            )}
           </div>
         </div>
       </form>
