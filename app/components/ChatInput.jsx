@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import styles from './ChatInput.module.css'
 import ImagePreview from './ImagePreview'
-import { fileToBase64, getImageFromClipboard } from '@/lib/utils'
+import { fileToBase64Compressed, getImageFromClipboard } from '@/lib/utils'
 
 export default function ChatInput({
   onSend,
@@ -92,7 +92,7 @@ export default function ChatInput({
     const imageFiles = files.filter(f => f.type.startsWith('image/'))
 
     for (const file of imageFiles) {
-      const imageData = await fileToBase64(file)
+      const imageData = await fileToBase64Compressed(file)
       setImages(prev => [...prev, imageData])
     }
 
@@ -109,7 +109,7 @@ export default function ChatInput({
     const imageFiles = files.filter(f => f.type.startsWith('image/'))
 
     for (const file of imageFiles) {
-      const imageData = await fileToBase64(file)
+      const imageData = await fileToBase64Compressed(file)
       setImages(prev => [...prev, imageData])
     }
   }
@@ -154,20 +154,29 @@ export default function ChatInput({
           />
 
           <div className={styles.actions}>
-            {/* Parallel mode toggle - only when 2+ images attached */}
+            {/* Parallel mode hint when exactly 1 image is attached */}
+            {supportsImages && images.length === 1 && (
+              <span className={styles.parallelHint} title="Attach more images to enable parallel mode — each image gets its own AI response simultaneously">
+                +img for parallel
+              </span>
+            )}
+
+            {/* Parallel mode toggle — appears when 2+ images attached */}
             {supportsImages && images.length > 1 && (
               <button
                 type="button"
                 onClick={() => setParallelMode(p => !p)}
                 className={`${styles.parallelToggle} ${parallelMode ? styles.active : ''}`}
-                title={parallelMode ? 'Send each image in parallel (one response per image)' : 'Send all images in one message'}
+                title={parallelMode
+                  ? 'Parallel: each image gets its own AI response simultaneously. Click to switch to combined.'
+                  : 'Combined: all images sent in one message. Click to switch to parallel (one response per image).'}
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="12" y1="2" x2="12" y2="22"/>
                   <path d="M4 6l8-4 8 4"/>
                   <path d="M4 18l8 4 8-4"/>
                 </svg>
-                {parallelMode ? 'Parallel' : '1 msg'}
+                {parallelMode ? 'Parallel ✓' : 'Combined'}
               </button>
             )}
 
