@@ -137,18 +137,6 @@ export default function ApiKeyModal({ onClose, onSave }) {
             </div>
             {adminError && <span className={styles.errorText}>{adminError}</span>}
             {adminMessage && <span className={styles.validating}>{adminMessage}</span>}
-
-            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginTop: '0.5rem', fontSize: '0.8rem', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={incognitoChecked}
-                onChange={(e) => setIncognitoChecked(e.target.checked)}
-                style={{ marginTop: '0.15rem' }}
-              />
-              <span>
-                <strong>Use on this device only</strong> — keys and chat history stay in memory and disappear when you close the tab. Recommended on shared computers.
-              </span>
-            </label>
           </div>
 
           {Object.values(PROVIDERS).map(provider => (
@@ -174,6 +162,17 @@ export default function ApiKeyModal({ onClose, onSave }) {
         </div>
 
         <div className={styles.footer}>
+          <label className={styles.incognitoRow}>
+            <input
+              type="checkbox"
+              checked={incognitoChecked}
+              onChange={(e) => setIncognitoChecked(e.target.checked)}
+              className={styles.incognitoCheckbox}
+            />
+            <span className={styles.incognitoText}>
+              <strong>Use on this device only</strong> — keys and chat history stay in memory and disappear when you close the tab. Recommended on shared computers.
+            </span>
+          </label>
           <p className={styles.hint}>
             {incognitoChecked
               ? 'Incognito mode: keys live only in this tab\'s memory and disappear when the tab closes. API requests still go directly from your browser to the AI provider.'
