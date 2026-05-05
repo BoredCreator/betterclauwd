@@ -91,6 +91,34 @@ export default function ChatMessage({ message, onRegenerate, onEdit, isLast, isG
         </div>
       )}
 
+      {/* Attached PDFs */}
+      {message.documents && message.documents.length > 0 && (
+        <div className={styles.images}>
+          {message.documents.map((doc, idx) => (
+            <div
+              key={`doc-${idx}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.4rem 0.6rem',
+                border: '1px solid var(--border)',
+                borderRadius: '6px',
+                fontSize: '0.8rem',
+                marginRight: '0.5rem',
+              }}
+              title={doc.name}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              {doc.name || 'document.pdf'}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Message content */}
       <div className={styles.content}>
         {isEditing ? (

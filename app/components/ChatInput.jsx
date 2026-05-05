@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import styles from './ChatInput.module.css'
 import ImagePreview from './ImagePreview'
-import { fileToBase64Compressed, getImageFromClipboard } from '@/lib/utils'
+import { fileToBase64Compressed, fileToPdfDocument, getImageFromClipboard, isPdfFile } from '@/lib/utils'
 
 export default function ChatInput({
   onSend,
@@ -14,9 +14,15 @@ export default function ChatInput({
 }) {
   const [input, setInput] = useState('')
   const [images, setImages] = useState([])
+  const [documents, setDocuments] = useState([])
   const [parallelMode, setParallelMode] = useState(false)
+  const [attachError, setAttachError] = useState(null)
   const textareaRef = useRef(null)
   const fileInputRef = useRef(null)
+  // Tracks the timestamp of the last keydown that *should* insert a newline
+  // (Shift+Enter, or any non-Enter key). Lets us distinguish "user pressed
+  // Shift+Enter on desktop" from "iOS Safari Return key with no keydown".
+  const lastNewlineKeyAtRef = useRef(0)
 
   // Auto-resize textarea
   useEffect(() => {
@@ -50,15 +56,35 @@ export default function ChatInput({
     if (disabled || isGenerating) return
 
     const messageContent = input.trim() || 'solve'
-    onSend(messageContent, images, parallelMode && images.length > 1)
+    onSend(messageContent, images, parallelMode && images.length > 1, documents)
     setInput('')
     setImages([])
+    setDocuments([])
     setParallelMode(false)
+    setAttachError(null)
 
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
-  }, [disabled, isGenerating, input, images, parallelMode, onSend])
+  }, [disabled, isGenerating, input, images, documents, parallelMode, onSend])
+
+  const ingestFiles = useCallback(async (files) => {
+    setAttachError(null)
+    for (const file of files) {
+      try {
+        if (isPdfFile(file)) {
+          const doc = await fileToPdfDocument(file)
+          setDocuments(prev => [...prev, doc])
+        } else if (file.type.startsWith('image/')) {
+          if (!supportsImages) continue
+          const img = await fileToBase64Compressed(file)
+          setImages(prev => [...prev, img])
+        }
+      } catch (err) {
+        setAttachError(err.message || 'Could not attach file.')
+      }
+    }
+  }, [supportsImages])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -69,17 +95,31 @@ export default function ChatInput({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       doSubmit()
+      return
+    }
+    // Any keydown that could legitimately insert a newline (Shift+Enter)
+    // marks the moment so handleChange can tell it apart from iOS Return.
+    if (e.key === 'Enter' && e.shiftKey) {
+      lastNewlineKeyAtRef.current = Date.now()
     }
   }
 
   // iOS Safari: Return key adds a literal '\n' to the textarea value
-  // instead of firing keydown. Detect and handle it here.
+  // instead of firing keydown. Detect and handle it here — but only when
+  // there was no recent Shift+Enter keydown, otherwise desktop Shift+Enter
+  // gets misread as a submit.
   const handleChange = (e) => {
     const newValue = e.target.value
 
-    // Detect iOS Return key: value gained exactly one trailing newline
     if (newValue === input + '\n') {
-      // doSubmit() reads the current `input` state (before this change), which is correct
+      const sinceShiftEnter = Date.now() - lastNewlineKeyAtRef.current
+      // Real Shift+Enter on desktop: keydown fired moments ago. Let the
+      // newline through.
+      if (sinceShiftEnter < 100) {
+        setInput(newValue)
+        return
+      }
+      // Otherwise it's the iOS Return-key edge case — submit.
       doSubmit()
       return
     }
@@ -89,13 +129,7 @@ export default function ChatInput({
 
   const handleFileSelect = async (e) => {
     const files = Array.from(e.target.files)
-    const imageFiles = files.filter(f => f.type.startsWith('image/'))
-
-    for (const file of imageFiles) {
-      const imageData = await fileToBase64Compressed(file)
-      setImages(prev => [...prev, imageData])
-    }
-
+    await ingestFiles(files)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -103,15 +137,8 @@ export default function ChatInput({
 
   const handleDrop = async (e) => {
     e.preventDefault()
-    if (!supportsImages) return
-
     const files = Array.from(e.dataTransfer.files)
-    const imageFiles = files.filter(f => f.type.startsWith('image/'))
-
-    for (const file of imageFiles) {
-      const imageData = await fileToBase64Compressed(file)
-      setImages(prev => [...prev, imageData])
-    }
+    await ingestFiles(files)
   }
 
   const handleDragOver = (e) => {
@@ -127,13 +154,22 @@ export default function ChatInput({
     })
   }
 
+  const removeDocument = (index) => {
+    setDocuments(prev => prev.filter((_, i) => i !== index))
+  }
+
   return (
     <div className={styles.container}>
-      <ImagePreview images={images} onRemove={removeImage} />
+      <ImagePreview images={images} documents={documents} onRemove={removeImage} onRemoveDocument={removeDocument} />
+      {attachError && (
+        <div style={{ padding: '0 1rem', color: 'var(--error)', fontSize: '0.75rem' }}>
+          {attachError}
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit}
-        className={`${styles.form} ${images.length > 0 ? styles.hasImages : ''}`}
+        className={`${styles.form} ${(images.length > 0 || documents.length > 0) ? styles.hasImages : ''}`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
       >
@@ -180,26 +216,22 @@ export default function ChatInput({
               </button>
             )}
 
-            {supportsImages && (
-              <>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleFileSelect}
-                  className={styles.fileInput}
-                  id="image-upload"
-                />
-                <label htmlFor="image-upload" className={styles.attachButton} title="Attach image(s)">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                    <polyline points="21 15 16 10 5 21"/>
-                  </svg>
-                </label>
-              </>
-            )}
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={supportsImages ? "image/*,application/pdf" : "application/pdf"}
+                multiple
+                onChange={handleFileSelect}
+                className={styles.fileInput}
+                id="image-upload"
+              />
+              <label htmlFor="image-upload" className={styles.attachButton} title={supportsImages ? "Attach image(s) or PDF" : "Attach PDF"}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                </svg>
+              </label>
+            </>
 
             {isGenerating ? (
               <button

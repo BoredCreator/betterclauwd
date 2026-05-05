@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@netlify/blobs": "^8.1.0",
     "katex": "^0.16.28",
     "next": "^15.1.0",
     "rc-slider": "^11.1.9",

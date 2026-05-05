@@ -358,7 +358,7 @@ export default function Home() {
   // Send message
   // baseMessages: optional explicit context array; when omitted uses `messages` from closure.
   // handleRegenerate must pass this to avoid reading stale state after setMessages().
-  const handleSend = useCallback(async (content, images = [], baseMessages = null) => {
+  const handleSend = useCallback(async (content, images = [], baseMessages = null, documents = []) => {
     const apiKeys = getApiKeys()
     const apiKey = apiKeys[provider]
 
@@ -378,6 +378,7 @@ export default function Home() {
       role: 'user',
       content,
       images: images.length > 0 ? images : undefined,
+      documents: documents && documents.length > 0 ? documents : undefined,
       timestamp: new Date().toISOString(),
     }
 
@@ -420,6 +421,7 @@ export default function Home() {
           role: m.role,
           content: m.content,
           images: m.images,
+          documents: m.documents,
         })),
         {
           model: actualModelId,
@@ -660,7 +662,7 @@ export default function Home() {
     if (lastUserMessage?.role === 'user') {
       const baseMessages = messagesWithoutAssistant.slice(0, -1)
       // Pass baseMessages explicitly so handleSend doesn't read stale `messages` closure
-      handleSend(lastUserMessage.content, lastUserMessage.images, baseMessages)
+      handleSend(lastUserMessage.content, lastUserMessage.images, baseMessages, lastUserMessage.documents)
     }
   }, [messages, handleSend])
 
@@ -723,6 +725,7 @@ export default function Home() {
             role: m.role,
             content: m.content,
             images: m.images,
+            documents: m.documents,
           })),
           {
             model: actualModelId,
@@ -1057,10 +1060,10 @@ export default function Home() {
 
         {/* Input */}
         <ChatInput
-          onSend={(content, images, parallel) =>
+          onSend={(content, images, parallel, documents) =>
             parallel && images.length > 1
               ? handleParallelSend(content, images)
-              : handleSend(content, images)
+              : handleSend(content, images, null, documents)
           }
           onStop={handleStop}
           isGenerating={isGenerating}
