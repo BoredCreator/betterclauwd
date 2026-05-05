@@ -69,9 +69,9 @@ export default function ApiKeyModal({ onClose, onSave }) {
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         if (res.status === 423) {
-          setAdminError('Endpoint locked due to too many failed attempts. Try again in up to an hour.')
+          setAdminError('Endpoint is locked. The admin must rotate the passcode in Netlify to unlock.')
         } else if (typeof data.attemptsRemaining === 'number') {
-          setAdminError(`Wrong passcode. ${data.attemptsRemaining} attempts left this hour.`)
+          setAdminError(`Wrong passcode. ${data.attemptsRemaining} attempt${data.attemptsRemaining === 1 ? '' : 's'} remaining before lockout.`)
         } else {
           setAdminError(data.error || 'Failed to load keys.')
         }
