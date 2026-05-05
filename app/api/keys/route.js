@@ -3,7 +3,7 @@ import {
   getKeys,
   setKeys,
   recordAttempt,
-  isLocked,
+  getRateState,
   safeEqual,
   MAX_FAILED_ATTEMPTS,
 } from '@/lib/server/vault'
@@ -26,7 +26,6 @@ const guard = async (request) => {
       { status: 500 },
     )
   }
-  if (await isLocked(ADMIN_PASSCODE)) return lockedResponse()
 
   let body
   try {
@@ -35,7 +34,13 @@ const guard = async (request) => {
     return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 })
   }
 
+  // Pre-flight check: bail without consuming an attempt if already locked.
+  const pre = await getRateState(ADMIN_PASSCODE)
+  if (pre.locked) return lockedResponse()
+
   const ok = safeEqual(body?.passcode, ADMIN_PASSCODE)
+  // Single read-modify-write — returns the post-write state so the
+  // attemptsRemaining we surface always matches what we just persisted.
   const state = await recordAttempt(ADMIN_PASSCODE, ok)
 
   if (!ok) {

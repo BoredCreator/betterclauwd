@@ -57,13 +57,15 @@ export default function ApiKeyModal({ onClose, onSave }) {
   }
 
   const handleAdminLoad = async () => {
+    if (adminBusy) return
     setAdminBusy(true)
-    setAdminError(null)
     setAdminMessage(null)
     try {
       const res = await fetch('/api/keys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // Cache: 'no-store' so retried requests aren't served stale 401s
+        cache: 'no-store',
         body: JSON.stringify({ passcode }),
       })
       const data = await res.json().catch(() => ({}))
@@ -75,19 +77,21 @@ export default function ApiKeyModal({ onClose, onSave }) {
         } else {
           setAdminError(data.error || 'Failed to load keys.')
         }
+        // Clear the wrong passcode so the next attempt starts fresh
+        setPasscode('')
         return
       }
+      // Success: save keys and close the modal automatically
       const fetched = data.keys || {}
-      setKeys(prev => ({ ...prev, ...fetched }))
-      // Apply incognito choice immediately so persistLocally routes correctly
+      const merged = { ...keys, ...fetched }
       setIncognito(incognitoChecked)
-      if (incognitoChecked) setSessionKeys(fetched)
-      persistLocally(fetched)
+      if (incognitoChecked) setSessionKeys(merged)
+      persistLocally(merged)
+      setKeys(merged)
       setAdminMode(true)
-      const count = Object.keys(fetched).length
-      setAdminMessage(count
-        ? `Loaded ${count} key${count === 1 ? '' : 's'} from server.`
-        : 'Authenticated — server has no keys saved yet.')
+      setAdminError(null)
+      onSave()
+      if (onClose) onClose()
     } catch (err) {
       setAdminError(err.message || 'Network error.')
     } finally {
