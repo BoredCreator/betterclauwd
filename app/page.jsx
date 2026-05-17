@@ -671,9 +671,8 @@ export default function Home() {
     const messageIndex = messages.findIndex(m => m.id === messageId)
     if (messageIndex === -1) return
 
-    const editedMessage = messages[messageIndex]
-
-    // Update the message content
+    // Edit in place — truncating + regenerating here collapses the DOM and
+    // snaps scroll to the edited message. Use Regenerate for a fresh reply.
     const updatedMessages = messages.map((m, idx) => {
       if (idx === messageIndex) {
         return { ...m, content: newContent }
@@ -681,97 +680,9 @@ export default function Home() {
       return m
     })
 
-    // If it's a user message, remove all messages after it and regenerate
-    if (editedMessage.role === 'user') {
-      const messagesUpToEdit = updatedMessages.slice(0, messageIndex + 1)
-
-      const apiKeys = getApiKeys()
-      const apiKey = apiKeys[provider]
-
-      if (!apiKey) {
-        setError(`No API key configured for ${PROVIDERS[provider]?.name}. Please add one in Settings.`)
-        return
-      }
-
-      setError(null)
-      setIsGenerating(true)
-
-      // Create placeholder for assistant message
-      const assistantMessage = {
-        id: generateId(),
-        role: 'assistant',
-        content: '',
-        timestamp: new Date().toISOString(),
-      }
-
-      setMessages([...messagesUpToEdit, assistantMessage])
-
-      try {
-        abortControllerRef.current = new AbortController()
-
-        const customEndpoints = getCustomEndpoints()
-        const customProviderConfig = getCustomProviderConfig()
-        const endpointToUse = provider === 'custom'
-          ? customProviderConfig.endpoint
-          : customEndpoints[provider]
-        const providerInstance = getProvider(provider, endpointToUse)
-        // Apply model override if set
-        const actualModelId = getActualModelId(provider, model)
-
-        const editSettings = getSettings()
-        const stream = providerInstance.sendMessage(
-          apiKey,
-          messagesUpToEdit.map(m => ({
-            role: m.role,
-            content: m.content,
-            images: m.images,
-            documents: m.documents,
-          })),
-          {
-            model: actualModelId,
-            systemPrompt,
-            temperature,
-            maxTokens: editSettings.defaultMaxTokens,
-            signal: abortControllerRef.current.signal,
-            thinking: thinkingEnabled && provider === 'anthropic',
-            webSearch: editSettings.webSearchEnabled,
-            mathEnabled: editSettings.mathEnabled,
-          }
-        )
-
-        let fullContent = ''
-        for await (const chunk of stream) {
-          fullContent += chunk
-          setMessages(prev => {
-            const newMessages = [...prev]
-            newMessages[newMessages.length - 1] = {
-              ...newMessages[newMessages.length - 1],
-              content: fullContent,
-            }
-            return newMessages
-          })
-        }
-
-        const finalMessages = [...messagesUpToEdit, { ...assistantMessage, content: fullContent }]
-        saveCurrentChat(finalMessages)
-
-      } catch (err) {
-        if (err.name === 'AbortError') {
-          // Keep partial response
-        } else {
-          setError(err.message || 'An error occurred while generating the response.')
-          setMessages(messagesUpToEdit)
-        }
-      } finally {
-        setIsGenerating(false)
-        abortControllerRef.current = null
-      }
-    } else {
-      // For assistant messages, just update the content
-      setMessages(updatedMessages)
-      saveCurrentChat(updatedMessages)
-    }
-  }, [messages, saveCurrentChat, provider, model, systemPrompt, temperature, thinkingEnabled])
+    setMessages(updatedMessages)
+    saveCurrentChat(updatedMessages)
+  }, [messages, saveCurrentChat])
 
   // Check if current model supports images
   const supportsImages = modelSupportsImages(provider, model)
